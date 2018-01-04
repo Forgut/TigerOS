@@ -1,0 +1,47 @@
+package proces_managment;
+import java.util.ArrayList;
+
+public class lista_procesow {
+	ArrayList<ArrayList<process_control_block>> procesy;
+	ArrayList<ArrayList<process_control_block>> procesy_gotowe;
+	public lista_procesow() {
+		procesy= new ArrayList<ArrayList<process_control_block>>();
+		for (int i=0;i<16;i++) {
+		procesy.add(new ArrayList<process_control_block>());
+		}
+		procesy_gotowe=procesy;
+		procesy_gotowe.get(0).add(new process_control_block(0));
+	}
+	public void add_to_list(process_control_block pcb) {
+		procesy.get(pcb.getPriorytet_dynamiczny()).add(pcb);
+	}
+	public int delete_from_list(process_control_block pcb) { //zwraca 0 jak sie udalo
+		int usuwany=0;
+		boolean czy_usunieto=false;
+		for (int i=0;i<procesy.get(pcb.getPriorytet_dynamiczny()).size();i++) {
+			if (procesy.get(pcb.getPriorytet_dynamiczny()).get(i).getID()==pcb.getID()) {
+				usuwany=i;
+				czy_usunieto=true;
+				break;
+			}
+		}
+		if (czy_usunieto) {procesy.get(pcb.getPriorytet_dynamiczny()).remove(usuwany);
+		return 0;
+		}
+		else {
+			return 1;
+		}
+	}
+	void wyslij_gotowe(ArrayList<ArrayList<process_control_block>> a) {
+		for (int i=1;i<16;i++) {
+			for (int j=0;j<procesy.get(i).size();j++) {
+				if (procesy.get(i).get(j).getStan()==0) {//jeżeli stan jest gotowy
+					procesy_gotowe.get(procesy.get(i).get(j).getPriorytet_dynamiczny()).add(procesy.get(i).get(j));
+					procesy_gotowe.get(i).remove(j);
+				}
+			}
+		}
+	}
+}
+
+
