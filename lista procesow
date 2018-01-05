@@ -1,9 +1,8 @@
-package proces_managment;
 import java.util.ArrayList;
 
 public class lista_procesow {
-	ArrayList<ArrayList<process_control_block>> procesy;
-	ArrayList<ArrayList<process_control_block>> procesy_gotowe;
+	public ArrayList<ArrayList<process_control_block>> procesy;
+	public ArrayList<ArrayList<process_control_block>> procesy_gotowe;
 	public lista_procesow() {
 		procesy= new ArrayList<ArrayList<process_control_block>>();
 		for (int i=0;i<16;i++) {
@@ -32,16 +31,14 @@ public class lista_procesow {
 			return 1;
 		}
 	}
-	void wyslij_gotowe(ArrayList<ArrayList<process_control_block>> a) {
+	void wyslij_gotowe() {
 		for (int i=1;i<16;i++) {
 			for (int j=0;j<procesy.get(i).size();j++) {
 				if (procesy.get(i).get(j).getStan()==0) {//jeżeli stan jest gotowy
 					procesy_gotowe.get(procesy.get(i).get(j).getPriorytet_dynamiczny()).add(procesy.get(i).get(j));
-					procesy_gotowe.get(i).remove(j);
+					procesy.get(i).remove(j);
 				}
 			}
 		}
 	}
 }
-
-
