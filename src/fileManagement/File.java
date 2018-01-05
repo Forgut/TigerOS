@@ -5,11 +5,13 @@ public class File {
 	public String name;
 	public int size;
 	public int indexOfFirstBlock;
+	public boolean open;
 	
 	File(){
 		name = "";
 		size=0;
 		indexOfFirstBlock = 0;
+		open = false;
 	}
 	
 	File(String name, int size, int indexOfFirstBlock){
@@ -20,7 +22,7 @@ public class File {
 	
 
 	public static void main(String[] args) {
-		System.out.print("c:");
+		System.out.print("C:");
 	}
 
 }
