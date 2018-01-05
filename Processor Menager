@@ -1,0 +1,183 @@
+import java.util.Arrays;
+
+public class ProcessorMenager {
+
+	private ProcessesManagement processesManagement;
+     
+  //  private Interpreter interpreter;
+    
+    boolean arr[] = new boolean[15];
+    		
+    public static  process idleProcess;//proces bezczynnosci;
+    
+    public static  process Running;//aktualnie dzialajacy proces
+    public static  process NextRunning;//kolejny proces do uruchomienia
+    lista_procesow lista=new lista_procesow();//stworzenie kolejki priorytetowej
+
+    
+    
+	public ProcessorMenager(Interpreter interpreter,ProcessesManagement processesManagement)
+	{
+		//this.interpteter=interpreter;
+		this.processesManagement=processesManagement;
+		Running=idleProcess;
+	}	
+	
+	
+	public void FindReadyThread()//zrzekanie sie albo uplyniecie kwantu czasu
+	{
+		CheckBiggest();
+		changeRunning();
+	}
+	
+	public void ReadyThread(process Temp)//ustawia proces w momecie zwiekszenia jego kwantu czasu
+	{
+		lista.procesy.get(Temp.getPriority()).remove(Temp);
+		Temp.INCPriorytet_Dynamiczny();
+		AddProcess(Temp);
+	}
+    	
+	public void Starving()//zwiekszanie priorytetow w po uplynieciu kwantu czasu
+	{
+		
+		for(int i=6;i>0;i--)
+		{
+			int j=0;
+			if(arr[i]==true)
+			{
+				for(i=0;i<lista.procesy.get(Running.getPriority().size()-1);i++)
+				{
+					lista.procesy.get(Running.getPriority()).get(j).INCLicznik_wykonanych_rozkazow();
+					if(lista.procesy.get(Running.getPriority()).get(j).getLicznik_rozkazow()==3)
+					{
+						lista.procesy.get(Running.getPriority()).get(j).INCPriorytet_Dynamiczny();
+						lista.procesy.get(Running.getPriority()).get(j).SetLicznik_rozkazow(0);
+						process temp=new process();
+						temp=lista.procesy.get(Running.getPriority()).get(j);
+						lista.procesy.get(Running.getPriority()).remove(j);
+						AddProcess(temp);
+					}
+				}
+					
+
+			}
+		}
+	}
+	
+	public boolean CheckBiggest()//sprawdza czy znajduje sie proces wiekszy od aktualnie wykonywanego, jesli tak ustawia go na jako NextRunning
+	{
+		int temp=Running.getPriority());
+		if(temp>7)
+		{
+			for(int i=15;i>7;i--)
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.procesy.get(i).get(1);
+					lista.procesy.get(i).remove(1);
+					
+					if(lista.procesy.get(i).isEmpty()==true)
+						
+					{
+						arr(i)=false;
+					}
+					
+					return true;
+				}
+				
+			}
+			NextRunning=idleProcess;
+			return false;
+			
+		}
+		else
+		{
+			for(int i=15;i>temp;i--)
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.procesy.get(i).get(1);
+					lista.procesy.get(i).remove(1);
+					
+					if(lista.procesy.get(i).isEmpty()==true)
+						
+					{
+						arr(i)=false;
+					}
+					
+					return true;
+				}
+				
+			}
+			for(int i=7;i>0;i--)
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.procesy.get(i).get(1);
+					lista.procesy.get(i).remove(1);
+					
+					if(lista.procesy.get(i).isEmpty()==true)
+						
+					{
+						arr(i)=false;
+					}
+					return false;
+				}
+				
+			}
+			NextRunning=idleProcess;
+			return false;
+		}
+		
+	}	
+	
+	public void AddProcess(process Temp)//dodawanie procesu do kolejki priorytetowej
+	{
+		lista.procesy.get(Temp.getPriority()).add(Temp);
+		
+		if(arr(Temp.getPriority()==false))
+		{
+			arr(Temp.getPriority())=true;
+		}
+		
+		if(CheckBiggest()==true)
+		{
+			changeRunning();
+		}
+		
+	}
+	
+	public void changeRunning()//bierze aktualnie dzialajacy proces, umieszcza go na poczatku kolejki oraz zmienia aktualnie wykonywany proces
+	{
+		if(Running.status==gotowy)//POPRAWIC
+		{
+			lista.procesy.get(Running.getPriority()).add(Running);
+			for(int i=lista.procesy.get(Running.getPriority()).size()-1;i>0;i--)
+			{
+				lista.procesy.get(Running.getPriority()).set(i-1,i);
+			}
+		}
+		
+		Running==NextRunning;
+		NextRunning=idleProcess;
+	}
+	
+	public void Scheduler()
+	{
+				
+	}
+	
+	public void showRunning() //pokazywanie aktualnie wykonywanego procesu
+	{
+		if(Running!=idleProcess)
+		{
+			 System.out.println("\n\nAktualnie jest wykonywany proces, jego informacje to:  \n\n");
+	         Running.printInformations();
+		}
+		else
+		{
+			System.out.println("\n\nAktualnie nie ma procesu wykonywanego \n\n");
+		}
+	}
+	
+}
