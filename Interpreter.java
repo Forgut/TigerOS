@@ -3,17 +3,24 @@ import java.util.ArrayList;
 public class Interpreter {
 
 	private int Reg_A=0, Reg_B=0, Reg_C=0;
+	private bool Flag_E = 0, Error = 0;
+	private Processor processor;
 	private Memory memory;
-	private ProcessManager manager;
-	private filesystem filesystem;
+	private Communication communication;
+	private ProcessManagment manager;
+	private Filesystem filesystem;
 	private PCB PCB_b; 			//Zmienna do kopii PCB procesu
-	private int CMDCounter; 	//Licznik rozkazu do czytania z pamiêci
+	private int CMDCounter; 	//Licznik rozkazu do czytania z pamiï¿½ci
+	private int CCKCounter;		//licznik do sprawdzania czy program siÄ™ skoÅ„czyÅ‚
 	
 //-------------------------------------------------------------------------------------------------------------------
 	
-	public Interpreter(Memory memory, ProcessManager manager) {
+	public Interpreter(Memory memory, ProcessManagment manager, Filesystem filesystem, Communication communication) {
 		this.memory=memory;
 		this.manager=manager;
+		this.filesystem=filesystem;
+		this.communication=communication;
+		processor=new Processor();
 	}
 	
 //-------------------------------------------------------------------------------------------------------------------
@@ -21,20 +28,22 @@ public class Interpreter {
 	public int RUN(Process Running) {
 		PCB_b=Running.GetPCB();		 //Wczytanie PCB procesu
 		
-		CMDCounter = PCB_b.GetCMDCounter(); //Pobieranie licznika rozkarów
+		CCKCounter = 0;
+		CMDCounter = PCB_b.GetCMDCounter(); //Pobieranie licznika rozkarï¿½w
 		
 		this.Reg_A = PCB_b.Get_A()); //Pobieranie stanu rejestru A
 		this.Reg_B = PCB_b.Get_B()); //Pobieranie stanu rejestru B
 		this.Reg_C = PCB_b.Get_C()); //Pobieranie stanu rejestru C
 		
-		memory.A = Reg_A;			 //Ustawianie wartosci rejestru A do pamiêci
-		memory.B = Reg_B;			 //Ustawianie wartosci rejestru B do pamiêci
-		memory.C = Reg_c;			 //Ustawianie wartosci rejestru C do pamiêci
+		processor.Set_A(Reg_A);			 //Ustawianie wartosci rejestru A do pamiï¿½ci
+		processor.Set_B(Reg_B);			 //Ustawianie wartosci rejestru B do pamiï¿½ci
+		processor.Set_C(Reg_C);			 //Ustawianie wartosci rejestru C do pamiï¿½ci
 		
+		String Instruction = "";
 		do {
-		String Instruction = GetInstruction();	 //Zmienna pomocnicza do ³adowania instrukcji z pamiêci
+		Instruction = GetInstruction();	 //Zmienna pomocnicza do ï¿½adowania instrukcji z pamiï¿½ci
 		Execute(Instruction);
-		}while(Instuction.substring(6) == ',');
+		}while(Instruction.charAt(CCKCounter) != ';' && Instruction.charAt(CCKCounter) != ',');
 		
 		ReturnToPCB();
 		Running.SetPCB(PCB_b);
@@ -44,7 +53,7 @@ public class Interpreter {
 //-------------------------------------------------------------------------------------------------------------------
 	
 	void Execute(String Instruction) {
-		int x = 0;	//takie coœ do sprawdzania czy by³a spacja
+		int x = 0;	//takie coï¿½ do sprawdzania czy byï¿½a spacja
 		int i = 1; 	//licznik do podzialu rozkazu na segmenty
 		String CMD = "";
 		String P1 = "";
@@ -54,72 +63,90 @@ public class Interpreter {
 		
 		while(i < 4) {
 			if(i == 1) {
-				while(Instruction[x]!=' ' || Instruction[x]!=',' || Instruction[x]!=';') {
-					CMD += Instruction[x];
+				while(Instruction.charAt(x)!=' ' && Instruction.charAt(x)!=',' && Instruction.charAt(x)!=';') {
+					CMD += Instruction.charAt(x);
+					CCKCounter++;
+					x++;
+				
+				}
+				if(Instruction.charAt(x)==' '){
+					i++;
 					x++;
 				}
-				if(Instruction[x]!=',' || Instruction[x]!=';'){
-					i++;
+				else if(Instruction.charAt(x)==','){
+					break;
 				}
-				else {
+				else if(Instruction.charAt(x)==';'){
 					break;
 				}
 			}
 			else if(i == 2) {
-				while(Instruction[x]!=' ' || Instruction[x]!=',' || Instruction[x]!=';') {
-					P1 += Instruction[x];
+				while(Instruction.charAt(x)!=' ' && Instruction.charAt(x)!=',' && Instruction.charAt(x)!=';') {
+					P1 += Instruction.charAt(x);
+					CCKCounter++;
 					x++;
 				}
-				if(Instruction[x]!=',' || Instruction[x]!=';'){
+				if(Instruction.charAt(x)==' '){
 					i++;
+					x++;
 				}
-				else {
+				else if(Instruction.charAt(x)==','){
+					break;
+				}
+				else if(Instruction.charAt(x)==';'){
 					break;
 				}
 			}
 			else if(i == 3) {
-				while(Instruction[x]!=' ' || Instruction[x]!=',' || Instruction[x]!=';') {
-					P2 += Instruction[x];
+				while(Instruction.charAt(x)!=' ' && Instruction.charAt(x)!=',' && Instruction.charAt(x)!=';') {
+					P2 += Instruction.charAt(x);
+					CCKCounter++;
 					x++;
 				}
-				break;
+				CCKCounter++;
+				i++;
 			}
+			else {
+				break;
+				}
+			
 		}
-
-		bool What = CheckP2(P2);
+		CCKCounter++;
+	
+		Boolean What = CheckP2(P2);
 		
 //-----------------------------------------------------------------------		
 		
 		switch (CMD) {
-		case "AD": // Dodawanie wartoœci
+		case "AD": // Dodawanie wartoï¿½ci
 			if (What) {
-				setValue(P1, getValue(P1) + getValue(P2));
+				processor.SetValue(P1, GetValue(P1) + GetValue(P2));
 			} else {
-				setValue(P1, getValue(P1) + Integer.parseInt(P2));
+				processor.SetValue(P1, GetValue(P1) + Integer.parseInt(P2));
 			}
 			break;
 
-		case "SB": // Odejmowanie wartoœci
+		case "SB": // Odejmowanie wartoï¿½ci
 			if (What) {
-				setValue(P1, getValue(P1) - getValue(P2));
+				processor.SetValue(P1, GetValue(P1) - GetValue(P2));
 			} else {
-				setValue(P1, getValue(P1) - Integer.parseInt(P2));
+				processor.SetValue(P1, GetValue(P1) - Integer.parseInt(P2));
 			}
 			break;
 			
-		case "ML": // Mno¿enie wartoœci
+		case "ML": // Mnoï¿½enie wartoï¿½ci
 			if (What) {
-				setValue(P1, getValue(P1) * getValue(P2));
+				processor.SetValue(P1, GetValue(P1) * GetValue(P2));
 			} else {
-				setValue(P1, getValue(P1) * Integer.parseInt(P2));
+				processor.SetValue(P1, GetValue(P1) * Integer.parseInt(P2));
 			}
 			break;
 
-		case "MV": // Umieszczenie wartoœci
+		case "MV": // Umieszczenie wartoï¿½ci
 			if (What) {
-				setValue(P1, getValue(P2));
+				processor.SetValue(P1, GetValue(P2));
 			} else {
-				setValue(P1, Integer.parseInt(P2));
+				processor.SetValue(P1, Integer.parseInt(P2));
 			}
 			break;
 
@@ -149,7 +176,7 @@ public class Interpreter {
 			System.out.println(filesystem.getFileContent(P1));
 			break;
 			
-		case "SK": // Wyœwietlanie plików
+		case "SK": // Wyï¿½wietlanie plikï¿½w
 			System.out.println(filesystem.showFiles());
 			break;
 
@@ -159,14 +186,14 @@ public class Interpreter {
 			CMDCounter = Integer.parseInt(P1);
 			break;
 			
-		case "JX": // Skok do rozkazu, jeœli rejestr = 0
-			if(getValue(P1)!=0) {
+		case "JX": // Skok do rozkazu, jeï¿½li rejestr = 0
+			if(GetValue(P1)!=0) {
 				CMDCounter = Integer.parseInt(P2);
 			}
 			break;
 
 		case "EX": // Koniec programu
-			ProcessorManager.RUNNING.SetState(4);
+			ProcessorManager.RUNNING.SetState(2);
 			break;	
 
 //-----------------------------------------------------------------------		
@@ -177,11 +204,11 @@ public class Interpreter {
 			filesystem.createEmptyFile(ProcessorManager.RUNNING.GetName());
 			filesystem.appendToFile(ProcessorManager.RUNNING.GetName(), received);
 			break;
-		case "XS": // -- Wys³anie komunikatu;
+		case "XS": // -- Wysï¿½anie komunikatu;
 			Communication.write(P1, P2);
 			break;
 		case "XN": // -- znalezienie PCB (P1);
-			//setValue("A", processesManagment.FindProcessWithName(P1));
+			//processor.setValue("A", processesManagment.FindProcessWithName(P1));
 			core.Processor.A=processesManagment.GetIDwithName(P1);
 			break;
 
@@ -223,8 +250,8 @@ public class Interpreter {
 
 //-------------------------------------------------------------------------------------------------------------------
 	
-	private bool CheckP2(String P2) {
-		if(P2 == " A" || P2 == " B" || P2 == " C") {
+	private Boolean CheckP2(String P2) {
+		if(P2 == "A" || P2 == "B" || P2 == "C") {
 			return 1;
 		}
 		else {
@@ -235,9 +262,9 @@ public class Interpreter {
 //-------------------------------------------------------------------------------------------------------------------
 	
 	private void ReturnToPCB() {
-			PCB_b.A = Get_A();
-			PCB_b.B = Get_B();
-			PCB_b.C = Get_C();
+			PCB_b.A = processor.Get_A();
+			PCB_b.B = processor.Get_B();
+			PCB_b.C = processor.Get_C();
 			
 			PCB_b.commandCounter = CMDCounter;
 	}
@@ -248,69 +275,35 @@ public class Interpreter {
 		String Instruction = "";
 		int Counter=0;
 		
-		while (Instruction[Counter]!=',' || Instruction[Counter]!=';') { 
-			Instruction += memory.GetChar(CMDCounter, PCB_b.ID); //pobieranie z pamiêci znaku o danym numerze, oraz nale¿¹cego do danego procesu
+		do{ 
+			Instruction += memory.GetChar(CMDCounter, PCB_b.ID); //pobieranie z pamiï¿½ci znaku o danym numerze, oraz naleï¿½ï¿½cego do danego procesu
 
 			CMDCounter++;
 			Counter++;
-		}
+		}while (Instruction.charAt(Counter)!=',' && Instruction.charAt(Counter)!=';');
 		return Instruction;
 	}
 	
 //-------------------------------------------------------------------------------------------------------------------
 	
-	private int GetValue(String P) {
-		switch (P) {
+	private int GetValue(String P1) {
+		switch (P1) {
 		case "A":
-			return memory.A;
+			return processor.Get_A();
 		case "B":
-			return memory.B;
+			return processor.Get_B();
 		case "C":
-			return memory.C;
+			return processor.Get_C();
 		}
 		return 0;
 	}
 	
 //-------------------------------------------------------------------------------------------------------------------
 	
-	private void SetValue(String P1, int P2) {
-		switch (P1) {
-		case "A":
-			memory.A=P2;
-			break;
-		case "B":
-			memory.B=P2;
-			break;
-		case "C":
-			memory.C=P2;
-			break;
-		}
-	}
-
-//-------------------------------------------------------------------------------------------------------------------
-	
- 	private int Get_A() {
-		return memory.A;
-	}
-	
-//-------------------------------------------------------------------------------------------------------------------
- 	
-	private int Get_B() {
-		return memory.B;
-	}
-	
-//-------------------------------------------------------------------------------------------------------------------
-	
-	private int Get_C() {
-		return memory.C;
-	}
-	
-//-------------------------------------------------------------------------------------------------------------------
-	
 	public void Show_Regs() {
-		System.out.println("Register A: " + memory.A);
-		System.out.println("Register B: " + memory.B);
-		System.out.println("Register C: " + memory.C);
+		System.out.println("Register A: " + processor.Get_A());
+		System.out.println("Register B: " + processor.Get_B());
+		System.out.println("Register C: " + processor.Get_C());
 		System.out.println("Command counter: " + this.CMDCounter);
 	}
 
