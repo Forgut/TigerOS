@@ -1,44 +1,39 @@
+package mutexLock;
+
 import java.util.ArrayList;
 
+import proces_managment.process_control_block;
+
 public class lista_procesow {
-	public ArrayList<ArrayList<process_control_block>> procesy;
-	public ArrayList<ArrayList<process_control_block>> procesy_gotowe;
+	private ArrayList<process_control_block> wszystkie_procesy;
 	public lista_procesow() {
-		procesy= new ArrayList<ArrayList<process_control_block>>();
-		for (int i=0;i<16;i++) {
-		procesy.add(new ArrayList<process_control_block>());
-		}
-		procesy_gotowe=procesy;
-		procesy_gotowe.get(0).add(new process_control_block(0));
+		wszystkie_procesy=new ArrayList<process_control_block>();
+		wszystkie_procesy.add(new process_control_block(0));
 	}
 	public void add_to_list(process_control_block pcb) {
-		procesy.get(pcb.getPriorytet_dynamiczny()).add(pcb);
+		if (pcb.getStan()==0) wszystkie_procesy.add(0,pcb); else wszystkie_procesy.add(pcb);
 	}
-	public int delete_from_list(process_control_block pcb) { //zwraca 0 jak sie udalo
-		int usuwany=0;
+	public int delete_from_list(process_control_block pcb) { //zwraca 0 jak sie udalo 1 jak nie 
 		boolean czy_usunieto=false;
-		for (int i=0;i<procesy.get(pcb.getPriorytet_dynamiczny()).size();i++) {
-			if (procesy.get(pcb.getPriorytet_dynamiczny()).get(i).getID()==pcb.getID()) {
-				usuwany=i;
+		for (int i=0;i<wszystkie_procesy.size();i++) {
+			if (wszystkie_procesy.get(i).getID()==pcb.getID()) {
+				wszystkie_procesy.remove(i);
 				czy_usunieto=true;
-				break;
+				return 0;
+			}
+		if (!czy_usunieto) return 1;
+		}
+		return 1;
+	}
+	public void gotowe_na_poczatek() {
+		for (int i=0;i<wszystkie_procesy.size();i++) {
+			if (wszystkie_procesy.get(i).getStan()==0) {
+				wszystkie_procesy.set(0, wszystkie_procesy.get(i));
+			wszystkie_procesy.remove(i);
+			}
 			}
 		}
-		if (czy_usunieto) {procesy.get(pcb.getPriorytet_dynamiczny()).remove(usuwany);
-		return 0;
-		}
-		else {
-			return 1;
-		}
-	}
-	void wyslij_gotowe() {
-		for (int i=1;i<16;i++) {
-			for (int j=0;j<procesy.get(i).size();j++) {
-				if (procesy.get(i).get(j).getStan()==0) {//jeżeli stan jest gotowy
-					procesy_gotowe.get(procesy.get(i).get(j).getPriorytet_dynamiczny()).add(procesy.get(i).get(j));
-					procesy.get(i).remove(j);
-				}
-			}
-		}
-	}
+	ArrayList<process_control_block> getWszystkie_procesy() {
+		return wszystkie_procesy;
+}
 }
