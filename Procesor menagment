@@ -1,0 +1,238 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+
+public class ProcessorManager {
+
+	private process_control_block processesManagement;
+    
+    private Interpreter interpreter;
+    
+    boolean arr[] = new boolean[15];
+    		
+    public static  process_control_block idleProcess;//proces bezczynnosci;
+    
+    public static  process_control_block Running;//aktualnie dzialajacy proces
+    public static  process_control_block NextRunning;//kolejny proces do uruchomienia
+    
+    public ArrayList<ArrayList<process_control_block>> lista;//stworzenie kolejki priorytetowej
+
+        
+    
+    
+	public ProcessorMenager(Interpreter interpreter,process_control_block processesManagement)
+	{
+		this.interpteter=interpreter;
+		this.processesManagement=processesManagement;
+		Running=idleProcess=processesManagement;
+	}	
+
+	
+	public void FindReadyThread()//zrzekanie sie albo uplyniecie kwantu czasu
+	{
+		CheckBiggest();
+		changeRunning();
+	}
+	
+	public void ReadyThread(process_control_block Temp)//decyduje o przyszłosci procesu w momencie zwiekszenia sie jego kwantu czasu 
+	{
+		lista.get(Temp.getPriorytet_dynamiczny()).remove(Temp);
+		Temp.INCPriorytet_Dynamiczny();
+		AddProcess(Temp);
+	}
+    	
+	public void Starving()//zwiekszanie priorytetow w po uplynieciu kwantu czasu
+	{
+		
+		for(int i=6;i>0;i--)//sprawdzanie tylko dla priorytetow 1-6
+		{
+			int j=0;
+			if(arr[i]==true)
+			{
+				for(i=0;i<(lista.get(Running.getPriorytet_dynamiczny()).size()-1);i++)
+				{
+					lista.get(i).get(j).INCLicznik_wykonanych_rozkazow();
+					
+					if(lista.get(i).get(j).getLicznik_wykonanych_rozkazow()==3)//decydowanie co ile rozkazow wykonanych ma zmienic sie priorytet
+					{
+						
+						lista.get(i).get(j).SetLicznik_wykonanych_rozkazow(0));//resetowanie licznika
+						
+						process_control_block temp=new process_control_block();//zmienna pomocnicza do przelozenia procesu w liscie na nowe należne jej miejsce
+						temp=lista.get(i).get(j);
+						ReadyThread(temp);
+					}
+				}
+					
+
+			}
+		}
+	}
+	
+	public boolean CheckBiggest()//sprawdza czy znajduje sie proces wiekszy od aktualnie wykonywanego, jesli tak ustawia go na jako NextRunning
+	{
+		int temp=Running.getPriorytet_dynamiczny();
+		if(temp>7)
+		{
+			for(int i=15;i>7;i--)//sprawdzanie jesli Running jest czasu rzeczywistego
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.get(i).get(1);
+					lista.get(i).remove(1);
+					
+					if(lista.get(i).isEmpty()==true)
+						
+					{
+						arr[i]=false;
+					}
+					
+					return true;
+				}
+				
+			}
+			NextRunning=idleProcess;
+			return false;
+			
+		}
+		else
+		{
+			for(int i=15;i>temp;i--)//sprawdzanie czy sa wieksze ktore powinny wywlaszczyc
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.get(i).get(1);
+					lista.get(i).remove(1);
+					
+					if(lista.get(i).isEmpty()==true)
+						
+					{
+						arr[i]=false;
+					}
+					
+					return true;
+				}
+				
+			}
+			for(int i=7;i>0;i--)//znalezienie innego zamiennika na przyszlosc
+			{
+				if(arr[i]==true)
+				{
+					NextRunning=lista.get(i).get(1);
+					lista.get(i).remove(1);
+					
+					if(lista.get(i).isEmpty()==true)
+						
+					{
+						arr[i]=false;
+					}
+					return false;
+				}
+				
+			}
+			NextRunning=idleProcess;
+			return false;
+		}
+		
+	}	
+	
+	public void AddProcess(process_control_block Temp)//dodawanie procesu do kolejki priorytetowej
+	{
+		lista.get(Temp.getPriorytet_dynamiczny()).add(Temp);
+		
+		if(arr[Temp.getPriorytet_dynamiczny()]==false)
+		{
+			arr[Temp.getPriorytet_dynamiczny()]=true;
+		}
+		
+		if(CheckBiggest()==true)
+		{
+			changeRunning();
+		}
+		
+	}
+	
+	public void GetReady()// dodawanie procesow gotowych do kolejki priorytetowej
+	{
+		int i=0;
+		do
+		{
+			process_control_block temp1=new process_control_block();
+			lista_procesow temp2=new lista_procesow();
+			
+			temp1=temp2.getelement();
+			
+			if(lista.get(temp1.getPriorytet_dynamiczny()).contains(temp1)==true)//sprawdzenie czy znajduje sie w liscie oraz dodac i 
+			{
+				break;
+			}
+			else
+			{
+				AddProcess(temp1);
+				i++;
+			}
+		}while(true);
+	}
+	
+	public void changeRunning()//bierze aktualnie dzialajacy proces, umieszcza go na poczatku kolejki oraz zmienia aktualnie wykonywany proces
+	{
+		if(Running.getStan()==0)
+		{
+			lista.get(Running.getPriorytet_dynamiczny()).add(0,Running);
+			/*for(int i=lista.procesy.get(Running.getPriorytet_dynamiczny()).size()-1;i>0;i--)
+			{
+				lista.procesy.get(Running.getPriorytet_dynamiczny()).add(i-1,i);
+			}*/
+		}
+		
+		Running=NextRunning;
+		NextRunning=idleProcess;
+	}
+	
+	
+	
+	public void Scheduler()//tu sie wszystko dzieje, z tego miejsca wszystko jest wywoływane 
+	{
+		GetReady();
+		Starving();
+		
+		if(Running.getStan()==1)//sprawdzanie czy aktualnie dzialajacy procesor nie jest w stanie oczekujacym
+		{
+			FindReadyThread();
+			
+			if(Running.getPriorytet_dynamiczny()!=0)
+			{
+				interpreter.run(Running);//odpalanie interpretera
+			}
+		}
+		else 
+		{
+			if(CheckBiggest())		
+			{
+				changeRunning();
+			}
+		
+		
+		
+			if(Running.getPriorytet_dynamiczny()!=0)
+			{
+				interpreter.run(Running);//odpalanie interpretera
+			}
+		}
+		
+		
+	}
+	
+	public void showRunning() //pokazywanie aktualnie wykonywanego procesu
+	{
+		if(Running!=idleProcess)
+		{
+			 System.out.println("\n\nAktualnie jest wykonywany proces, jego informacje to:  \n\n");
+	         Running.print();
+		}
+		else
+		{
+			System.out.println("\n\nAktualnie nie ma procesu wykonywanego \n\n");
+		}
+	}
+	
+}
