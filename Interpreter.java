@@ -41,8 +41,8 @@ public class Interpreter {
 		
 		String Instruction = "";
 		do {
-		Instruction = GetInstruction();	 //Zmienna pomocnicza do �adowania instrukcji z pami�ci
-		Execute(Instruction);
+			Instruction = GetInstruction();	 //Zmienna pomocnicza do �adowania instrukcji z pami�ci
+			Execute(Instruction);
 		}while(Instruction.charAt(CCKCounter) != ';' && Instruction.charAt(CCKCounter) != ',');
 		
 		ReturnToPCB();
@@ -115,7 +115,7 @@ public class Interpreter {
 	
 		Boolean What = CheckP2(P2);
 		
-//-----------------------------------------------------------------------		
+//-----------------------------------------------------------------------	ARYTMETYKA
 		
 		switch (CMD) {
 		case "AD": // Dodawanie warto�ci
@@ -150,21 +150,25 @@ public class Interpreter {
 			}
 			break;
 
-//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------	PLIKI
+		
+		case "CE": // Tworzenie pliku
+			filesystem.createEmptyFile(P1);
+			break;
 			
 		case "CF": // Tworzenie pliku
 			if (What) {
-				filesystem.createFileWithContent(P1, GetValue(P2);
+				filesystem.createFile(P1, GetValue(P2));
 			} else {
-				filesystem.createFileWithContent(P1, P2);
+				filesystem.createFile(P1, P2);
 			}
 			break;
 			
 		case "WF": // Dopisanie do pliku
 			if (What) {
-				filesystem.writeToFile(P1, GetValue(P2);
+				filesystem.appendToFile(P1, GetValue(P2);
 			} else {
-				filesystem.writeToFile(P1, P2);
+				filesystem.appendToFile(P1, P2);
 			}
 			break;
 			
@@ -172,77 +176,59 @@ public class Interpreter {
 			filesystem.deleteFile(P1);
 			break;
 			
-		case "RF": // Czytanie pliku
+		case "RF": // Czytanie pliku														//TODO
 			System.out.println(filesystem.getFileContent(P1));
 			break;
 			
-		case "SK": // Wy�wietlanie plik�w
+		case "SK": // Wy�wietlanie plik�w													//TODO
 			System.out.println(filesystem.showFiles());
 			break;
 
-//-----------------------------------------------------------------------
+//-----------------------------------------------------------------------	JUMPY I KONCZENIE
 			
 		case "JP": // Skok do rozkazu
 			CMDCounter = Integer.parseInt(P1);
 			break;
 			
 		case "JX": // Skok do rozkazu, je�li rejestr = 0
-			if(GetValue(P1)!=0) {
+			if(GetValue(P1)==0) {
 				CMDCounter = Integer.parseInt(P2);
 			}
 			break;
 
 		case "EX": // Koniec programu
-			ProcessorManager.RUNNING.SetState(2);
+			manager.RUNNING.SetState(2);
 			break;	
 
-//-----------------------------------------------------------------------		
-	/*	
-		case "XR": // czytanie komunikatu;
-			String received  = Communication.read(ProcessorManager.RUNNING.GetName());
-			ProcessorManager.RUNNING.pcb.receivedMsg = received;
-			filesystem.createEmptyFile(ProcessorManager.RUNNING.GetName());
-			filesystem.appendToFile(ProcessorManager.RUNNING.GetName(), received);
+//-----------------------------------------------------------------------	PROCESY
+	
+		case "XR": // czytanie komunikatu;													//TODO
+			communication.readPipe(P1, P2, memory.freeLogicAdress(P2));
 			break;
+	
 		case "XS": // -- Wys�anie komunikatu;
-			Communication.write(P1, P2);
+			communication.writePipe(P1, P2);
 			break;
-		case "XN": // -- znalezienie PCB (P1);
-			//processor.setValue("A", processesManagment.FindProcessWithName(P1));
-			core.Processor.A=processesManagment.GetIDwithName(P1);
+	
+		case "XF": // -- znalezienie ID procesu (P1);
+			processor.Set_A(manager.GetIDwithName(P1));
 			break;
-
-		case "XC": {// -- tworzenie procesu (P1);
-			File file = new File(P2);
-			if(!file.exists())  {
-				try {
-					FileWriter fw = new FileWriter(P2, true);
-					BufferedWriter out = new BufferedWriter(fw);
-					out.write("HLT");
-					out.close();
-					fw.close();
-				} catch(FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			if(processesManagment.NewProcess_XC(P2, P1)==-1){
-				ProcessorManager.RUNNING.SetState(4);
-				return;
-			}
-			processesManagment.getProcess(P1).SetState(3);
+			
+		case "XP": // -- Stworzenie potoku
+			communication.createPipe(P1);
+			break;
+	
+		case "XC": {// -- tworzenie procesu (P1,P2);
+			manager.createprocess(P1,P2);
 			break; }
-		case "XY": // -- Uruchomienie procesu
-			processesManagment.getProcess(P1).SetState(1);
-			processesManagment.getProcess(P1).SetCurrentPriority(ProcessorManager.MAX_PRIORITY+1);
-			break;
+	/*
 		case "XD": // -- usuwanie procesu (P1);
-			processesManagment.getProcess(P1).SetState(4);
-			processesManagment.DeleteProcessWithName_XD(P1);
+			manager.getProcess(P1).SetState(4);
+			manager.DeleteProcessWithName_XD(P1);
 			break;
+			
 		case "XZ": // -- Zatrzymanie procesu
-			processesManagment.getProcess(P1).SetState(3);
+			manager.getProcess(P1).SetState(3);
 			break;
 	*/
 		}	
