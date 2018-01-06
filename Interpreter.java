@@ -3,13 +3,13 @@ import java.util.ArrayList;
 public class Interpreter {
 
 	private int Reg_A=0, Reg_B=0, Reg_C=0;
-	private bool Flag_E = 0, Error = 0;
+	private bool Flag_E = 0;		//Flaga do bledu wykonywania rozkazu
 	private Processor processor;
 	private Memory memory;
 	private Communication communication;
 	private ProcessManagment manager;
 	private Filesystem filesystem;
-	private PCB PCB_b; 			//Zmienna do kopii PCB procesu
+	//private PCB PCB_b; 			//Zmienna do kopii PCB procesu
 	private int CMDCounter; 	//Licznik rozkazu do czytania z pami�ci
 	private int CCKCounter;		//licznik do sprawdzania czy program się skończył
 	
@@ -26,14 +26,14 @@ public class Interpreter {
 //-------------------------------------------------------------------------------------------------------------------
 	
 	public int RUN(Process Running) {
-		PCB_b=Running.GetPCB();		 //Wczytanie PCB procesu
+		//PCB_b=Running.GetPCB();		 //Wczytanie PCB procesu
 		
 		CCKCounter = 0;
-		CMDCounter = PCB_b.GetCMDCounter(); //Pobieranie licznika rozkar�w
+		CMDCounter = Running.getLicznik_rozkazow(); //Pobieranie licznika rozkar�w
 		
-		this.Reg_A = PCB_b.Get_A()); //Pobieranie stanu rejestru A
-		this.Reg_B = PCB_b.Get_B()); //Pobieranie stanu rejestru B
-		this.Reg_C = PCB_b.Get_C()); //Pobieranie stanu rejestru C
+		this.Reg_A = Running.getR1(); //Pobieranie stanu rejestru A
+		this.Reg_B = Running.getR2(); //Pobieranie stanu rejestru B
+		this.Reg_C = Running.getR3(); //Pobieranie stanu rejestru C
 		
 		processor.Set_A(Reg_A);			 //Ustawianie wartosci rejestru A do pami�ci
 		processor.Set_B(Reg_B);			 //Ustawianie wartosci rejestru B do pami�ci
@@ -43,7 +43,7 @@ public class Interpreter {
 		do {
 			Instruction = GetInstruction();	 //Zmienna pomocnicza do �adowania instrukcji z pami�ci
 			Execute(Instruction);
-		}while(Instruction.charAt(CCKCounter) != ';' && Instruction.charAt(CCKCounter) != ',');
+		}while(Instruction.charAt(CCKCounter) != ';' && Instruction.charAt(CCKCounter) != ',' && Running.Getstan()!=2 && Running.Getstan()!=1);
 		
 		ReturnToPCB();
 		Running.SetPCB(PCB_b);
@@ -197,7 +197,7 @@ public class Interpreter {
 			break;
 
 		case "EX": // Koniec programu
-			manager.RUNNING.SetState(2);
+			Running.SetStan(2);
 			break;	
 
 //-----------------------------------------------------------------------	PROCESY
@@ -221,16 +221,11 @@ public class Interpreter {
 		case "XC": {// -- tworzenie procesu (P1,P2);
 			manager.createprocess(P1,P2);
 			break; }
-	/*
-		case "XD": // -- usuwanie procesu (P1);
-			manager.getProcess(P1).SetState(4);
-			manager.DeleteProcessWithName_XD(P1);
+	
+		case "XZ": // -- wstrzymanie procesu
+			Running.SetStan(1);
 			break;
-			
-		case "XZ": // -- Zatrzymanie procesu
-			manager.getProcess(P1).SetState(3);
-			break;
-	*/
+	
 		}	
 	}
 
