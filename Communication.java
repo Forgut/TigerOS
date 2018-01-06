@@ -1,5 +1,3 @@
-package InterprocessCommunication;
-
 import java.util.LinkedList;
 import java.util.Scanner;
 
@@ -7,8 +5,7 @@ public class Communication
 {
 	//variables
 	private LinkedList<Pipe> pipes = new LinkedList<Pipe>();
-	//private static ProcessesManagement processesManagement; //process which is running right now
-	
+	//private process_control_block pcb; //process which is running right now
 	
 	//methods
 	public void createPipe(String pipeName)
@@ -17,7 +14,7 @@ public class Communication
 		{
 			if(pipes.get(i).getName().equals(pipeName) ) 
 				{
-					System.out.println("The pipe exists.."); // OMIN¥C CHYBA
+					// System.out.println("The pipe exists.."); // TODO: komunikat czy nie?
 					return;
 				}
 		}
@@ -25,110 +22,63 @@ public class Communication
 	}
 	public void deletePipe(String pipeName)
 	{
-		//System.out.println("Podaj nazwe: ");
-		//Scanner reader = new Scanner(System.in);
-		//name = reader.next();
-		for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
+		for(int i =0;i< pipes.size();i++) // przeglÄ…d Å‚Ä…cz
 		{	
 			if(pipes.get(i).getName().equals(pipeName) ) pipes.remove(i);
 		}
 	}
-	/*public int openPipe(String name, char sign) // 'r' - read, 'w' - write
+	public void readPipe(String pipeName, int numberOfSigns, int memoryAddress, process_control_block pcb)
 	{
-		if(sign == 'w') 
-		{
-
-			for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
-			{	
-				if(pipes.get(i).getName().equals(name) && pipes.get(i).getWriteOpen() == false && pipes.get(i).getReadOpen() == false ) // szukanie ³¹cza o danej nazwie
-				{
-					pipes.get(i).setWriteOpen(true); // 
-				}
-				else
-				{
-					//synch czekamyy na ustawienie read=false i write=false 
-				}
-			}
-		}
-		else if(sign == 'r') 
-		{
-
-			for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
-			{	
-				if(pipes.get(i).getName().equals(name) && pipes.get(i).getWriteOpen() == false && pipes.get(i).getReadOpen() == false ) // szukanie ³¹cza o danej nazwie
-				{
-					pipes.get(i).setReadOpen(true); // 
-				}
-				else
-				{
-					//synch //synch czekemay na ustawienie read=false i write=false 
-				}
-			}
-		}
-		return 0;
-	}
-	public int closePipe(String name)
-	{
-
-			for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
-			{	
-				if(pipes.get(i).getName().equals(name)) // szukanie ³¹cza o danej nazwie
-				{
-					pipes.get(i).setWriteOpen(false);
-					pipes.get(i).setReadOpen(false);
-				}
-			}
-
-		return 0;
-	}*/
-	public void readPipe(String pipeName, int numberOfSigns, int memoryAddress)
-	{
-		String result = null;
-		for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
+		//this.pcb = pcb;
+		for(int i =0;i< pipes.size();i++) // przeglÄ…d Å‚Ä…cz
 		{	
-			if(pipes.get(i).getName().equals(pipeName)) // szukanie ³¹cza o danej nazwie
+			if(pipes.get(i).getName().equals(pipeName)) // szukanie Å‚Ä…cza o danej nazwie
 			{
-				pipes.get(i).setAvailable(false); // zajmowanie ³¹cza
 				for(int j = 0; j < numberOfSigns; j++)
 				{
-					if(pipes.get(i).data.size() > 0)  // dodac do kolejki procesów oczekujacych, a¿ coœ pojawi siê w ³¹czu
-					{
-						// lock(); ??? DAWID, tylko zapis lub odczyt w jednym czasie
-						result += pipes.get(i).data.removeFirst(); // 	USUNAC
-						//PageTableObiekt.writeToMemory(memoryAddress + j, pipes.get(i).data.removeFirst() ); // zapisywanie do pamiêci, modu³ NATALIA
-						// unlock(); ???
-					}
-					else System.out.println("Nie ma komunikatow."); // USUNAC
+					boolean isEmpty = false;
+					if(pipes.get(i).data.size() == 0) 
+						{
+							isEmpty = true; // jeÅ›li pusty
+							pipes.get(i).lock.lock(pcb,isEmpty);
+						}
+					else 
+						{
+							isEmpty = false; // jeÅ›li coÅ› zawiera
+							pipes.get(i).lock.lock(pcb);
+						}
+					
+					PageTableObiekt.writeToMemory(memoryAddress + j, pipes.get(i).data.removeFirst() ); // zapisywanie do pamiÄ™ci, moduÅ‚ NATALIA 
+					if(pipes.get(i).data.size() == 0) isEmpty = true; 
+					else isEmpty = true;
+					pipes.get(i).lock.unlock();
 				}
-				pipes.get(i).setAvailable(true); // oddanie ³¹cza
 				return;
 			}
 		}
-		System.out.println("Nie ma takiego lacza."); // synch?
-		System.out.println(result); // USUNAC
+		// System.out.println("Nie ma takiego lacza."); // TODO: komunikat czy nie
 	}
-	public void writePipe(String pipeName, String message)
+	public void writePipe(String pipeName, String message, process_control_block pcb)
 	{
-		for(int i =0;i< pipes.size();i++) // przegl¹d ³¹cz
+		//this.pcb = pcb;
+		boolean isEmpty = false;
+		for(int i =0;i< pipes.size();i++) // przeglÄ…d Å‚Ä…cz
 		{	
-			if(pipes.get(i).getName().equals(pipeName)) // szukanie ³¹cza o danej nazwie
+			if(pipes.get(i).getName().equals(pipeName)) // szukanie Å‚Ä…cza o danej nazwie
 			{
-				pipes.get(i).setAvailable(false); // zajmowanie ³¹cza
-
-					//dzielenie komunikatu na pojedyncze znaki i zapisywanie do ³¹cza
+					//dzielenie komunikatu na pojedyncze znaki i zapisywanie do Å‚Ä…cza
 					for(int j = 0; j < message.length(); j++) 
 					{
-						// lock(); ?? DAWID, tylko zapis lub odczyt w jednym czasie
+						pipes.get(i).lock.lock(pcb);
 						pipes.get(i).data.add((Character)message.charAt(j));
-						// unlock(); ??
+						if(pipes.get(i).data.size() == 0) isEmpty = true; 
+						else isEmpty = false;
+						pipes.get(i).lock.unlock();
 					}
-
-				pipes.get(i).setAvailable(true); // oddanie ³¹cza
 				return;
 			}
-			
 		}
-		System.out.println("Nie ma takiego ³¹cza."); // synch?
+		// System.out.println("Nie ma takiego Å‚Ä…cza."); // TODO: komunikat czy nie?
 		
 	}
 	public void showAllPipes()
@@ -136,21 +86,20 @@ public class Communication
 		for(int i = 0;i< pipes.size();i++)
 		{	
 			System.out.print(pipes.get(i).getName() + ": " + pipes.get(i).getData().toString() + '\n');
-
 		}
 	}
-	public void showOnePipe()
+	public void showOnePipe() //raczej niepotrzebne
 	{
 		System.out.println("Choose: ");
-		for(int i = 0;i< pipes.size();i++) // wypisanie dostêpnych ³¹czy
+		for(int i = 0;i< pipes.size();i++) // wypisanie dostÄ™pnych Å‚Ä…czy
 		{	
 			System.out.println(pipes.get(i).getName());
 		}
 		Scanner in = new Scanner(System.in);
 		System.out.println();
-		String inS = in.next(); // wczytanie dolecowej nazwy ³¹cza
+		String inS = in.next(); // wczytanie dolecowej nazwy Å‚Ä…cza
 
-		for(int i = 0;i< pipes.size();i++) // znalezienie docelowego ³¹cza
+		for(int i = 0;i< pipes.size();i++) // znalezienie docelowego Å‚Ä…cza
 		{	
 			if(inS.equals(pipes.get(i).getName().toString())) 
 				{
@@ -159,34 +108,6 @@ public class Communication
 				}
 		}
 		System.out.println("Does not exist!");
-	}
-	
-	
-	
-	
-	
-	public static void main(String[] args)
-	{
-		Communication com = new Communication();
-		com.createPipe("p1");
-		com.createPipe("p2");
-		com.createPipe("p1");
-		
-		com.writePipe("p1", "hejka1");
-		com.writePipe("p1", "hejka2");
-		com.writePipe("p1", "hejka3");
-		com.writePipe("p1", "hejka4");
-		com.writePipe("p1", "hejka5");
-		com.writePipe("p2", "qqqq");
-		com.writePipe("p2", "wwww");
-		com.readPipe("p1", 3, 10);
-		com.writePipe("p1", "hejka5.2");
-		com.writePipe("p1", "hejka6");
-		com.createPipe("p2");
-		com.showAllPipes();
-		com.deletePipe("p2");
-		com.showAllPipes();
-
 	}
 
 }
