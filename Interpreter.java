@@ -182,7 +182,7 @@ public class Interpreter {
 		case "WF": // Dopisanie do pliku
 			if (What) {
 				if(filesystem.appendToFile(P1, GetValue(P2)==1){
-					filesystem.appendToFile(P1, GetValue(P2);
+					filesystem.appendToFile(P1, GetValue(P2));
 				}
 				else {
 					Running.SetStan(2);
@@ -262,6 +262,15 @@ public class Interpreter {
 		case "XP": // -- Stworzenie potoku
 			if(communication.createPipe(P1)==1) {
 				communication.createPipe(P1);
+			}
+			else {
+				Running.SetStan(2);
+			}
+			break;
+			
+		case "XE": // -- Usuwanie potoku
+			if(communication.deletePipe(P1)==1) {
+				communication.deletePipe(P1);
 			}
 			else {
 				Running.SetStan(2);
