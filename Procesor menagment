@@ -19,10 +19,10 @@ public class ProcessorManager {
         
     
     
-	public ProcessorMenager(Interpreter interpreter,process_control_block processesManagement)
+	public ProcessorManager(Interpreter interpreter)
 	{
 		this.interpteter=interpreter;
-		this.processesManagement=processesManagement;
+		
 		Running=idleProcess=processesManagement;
 	}	
 
