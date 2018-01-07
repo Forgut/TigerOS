@@ -237,6 +237,7 @@ public class Interpreter {
 				processor.SetValue("C", memory.getLogicalAdressOfMessageToWrite(P2));
 				if(communication.readPipe(P1, P2, GetValue("C"))){
 					communication.readPipe(P1, P2, GetValue("C"));
+					processor.SetValue("B", memory.GetData("C", P2));
 				}
 				else {
 					Running.SetStan(2);
@@ -290,6 +291,7 @@ public class Interpreter {
 		case "XZ": // -- wstrzymanie procesu
 			Running.SetStan(1);
 			break;
+	
 	
 		}	
 	}
