@@ -10,7 +10,7 @@ public class ProcessorManager {
     boolean arr[] = new boolean[15];
     		
     public static  process_control_block idleProcess;//proces bezczynnosci;
-    
+    lista_procesow listaS=new lista_procesow();
     public static  process_control_block Running;//aktualnie dzialajacy proces
     public static  process_control_block NextRunning;//kolejny proces do uruchomienia
     
@@ -19,8 +19,9 @@ public class ProcessorManager {
         
     
     
-	public ProcessorManager(Interpreter interpreter)
+	public ProcessorManager(Interpreter interpreter,lista_procesow listaS)
 	{
+		this.listaS=listaS;
 		this.interpteter=interpreter;
 		
 		Running=idleProcess=processesManagement;
@@ -157,9 +158,9 @@ public class ProcessorManager {
 		do
 		{
 			process_control_block temp1=new process_control_block();
-			lista_procesow temp2=new lista_procesow();
 			
-			temp1=temp2.getelement();
+			
+			temp1=listaS.getelement();
 			
 			if(lista.get(temp1.getPriorytet_dynamiczny()).contains(temp1)==true)//sprawdzenie czy znajduje sie w liscie oraz dodac i 
 			{
