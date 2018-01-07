@@ -15,6 +15,8 @@ public class PageTable {
 	protected static int[] frameNumber;
 	protected static int pagesRequired;
 	private static Boolean[] inRAM;
+	private static int firstFreeLogicalAdress;
+	private static int processSize;
 	
 	public PageTable(String fileName, int processSize) {
 		if(processSize%Memory.FRAME_SIZE==0)
@@ -29,7 +31,7 @@ public class PageTable {
 	}
 	
 	public static void print() {
-		System.out.println("\nPage Table ID:" + ControlBlock.ID); // TODO - ControlBlock
+		System.out.println("\nPage Table ID:" + Runnning.ID);
 		System.out.println("Frame number: ");
 		for(int e : frameNumber)
 			System.out.print(e + " ");
@@ -57,15 +59,15 @@ public class PageTable {
 	}
 	
 	private void setVirtualBase() {
-		// TODO
-		ControlBlock.virtualBase = 2;
+		Running.virtualBase = Memory.virtualMemory.size();
 	}
 	
 	public void writeToVirtualMemory(char[] program, int processSize) {
-		Memory.writeToVirualMemory(ControlBlock.virtualBase, program, processSize); 
+		Memory.writeToVirualMemory(Running.virtualBase, program, processSize); 
 	}	
 	
 	public void writeFromFileToVirtualMemory(String fileName, int processSize) {
+		this.processSize = processSize;
 		char[] program;
 		StringBuilder sb = new StringBuilder();
 		int logicalAdress = 0;
@@ -98,13 +100,21 @@ public class PageTable {
 		String everything = sb.toString();
 		String result = everything.replaceAll("[\\t\\n\\r]+"," ");
 		program = result.toCharArray();
-		Memory.writeToVirualMemory(ControlBlock.virtualBase, program, processSize); //virtualBase wziac z tablicy PCB? z obecnie wykonywanego procesu?
+		setFirstFreeLogicalAdress(program);
+		System.out.println("first free: " + firstFreeLogicalAdress);
+		Memory.writeToVirualMemory(Running.virtualBase, program, processSize);
+	}
+	
+	private void setFirstFreeLogicalAdress(char[] program) {
+		for(int i=0;i<program.length;i++) 
+			if(program[i]==';')
+				firstFreeLogicalAdress = i+1;
 	}
 
 	public  char readFromMemory(int logicalAdress) {
 		if(isFrameInRAM(getVirtualFrame(logicalAdress))) {
 			// TODO: set bit innego procesu		
-			int ID = ControlBlock.ID; 	// TODO: wziac ID z obecnego procesu
+			int ID = Running.ID;
 			int frameRAM = frameNumber[getVirtualFrame(logicalAdress)];
 			for(FIFOFrame e : Memory.FIFO)
 				if(e.ID == ID && e.number == frameRAM)
@@ -143,7 +153,8 @@ public class PageTable {
 			Memory.writeFrameToRAM(frameVirtual, frameRAM);
 			frameNumber[frameVirtual] = frameRAM;
 			inRAM[frameVirtual] = true;
-			addFrameToFIFO(frameRAM, ControlBlock.ID); // TODO: zmienic ControlBlock na element w tablicy procesow
+	//		addFrameToFIFO(frameRAM, ControlBlock.ID); 
+			addFrameToFIFO(frameRAM, Running.ID);
 		}
 		else {
 			int victimFrameFIFOIndex = getVictimFrame();
@@ -151,9 +162,9 @@ public class PageTable {
 			int ID = Memory.FIFO.get(victimFrameFIFOIndex).ID;				
 			if(isPageInCurrentProcess(ID)) 
 				removeEverythingAboutPageOfCurrentProcessFromRAM(frameRAM);
-			else {
-				// TODO: usuñ z pagetable innego procesu
-			}
+			else
+				// TODO: usuñ z pagetable innego procesu - nieprzetestowane
+				removeEverythingAboutPageOfOtherProcessFromRAM(frameRAM, ID);
 			Memory.FIFO.remove(victimFrameFIFOIndex);
 			
 			Memory.writeFrameToRAM(frameVirtual, frameRAM);
@@ -179,15 +190,37 @@ public class PageTable {
 		inRAM[indexOfFrameToClear] = false;
 	}
 	
+	// TODO: przetestowac
+	private static void removeEverythingAboutPageOfOtherProcessFromRAM(int frameRAM, int ID) {
+		// from RAM to virtual
+		PCB tempPCB = getPCB(ID); 		// nie mam pojecia, skad mam wziac getPCB, kto mi to udostepni
+		PageTable temp = tempPCB.pageTable;
+		int frameVirtualToRewrite = temp.frameNumber[frameRAM];
+		if(frameVirtualToRewrite != -1)
+			Memory.rewriteFromRAMToVirtualMemory(frameVirtualToRewrite, getVirtualFrameOfOtherProcess(), tempPCB.virtualBase);
+		
+		//frameNumber, inRAM
+		int indexOfFrameToClear = 0;
+		for(int i=0; i<temp.frameNumber.length; i++) {
+			if(temp.frameNumber[indexOfFrameToClear]==frameRAM) 
+				break;
+			else
+				indexOfFrameToClear++;
+		}
+		temp.frameNumber[indexOfFrameToClear] = -1;
+		temp.inRAM[indexOfFrameToClear] = false;
+	}
+	
 	private static void addEverythingAboutPageOfCurrentProcessToRAM(int frameVirtual, int frameRAM, int ID) {
 		frameNumber[frameVirtual] = frameRAM;
 		inRAM[frameVirtual] = true;
 		addFrameToFIFO(frameRAM, ID);
 	}
 	
+	// TODO: przetestowac
 	private static Boolean isPageInCurrentProcess(int IDfromFIFO) {
-		// TODO
-		return true;
+		return IDfromFIFO == Running.ID;
+	//	return true;
 	}
 
 	private static void addFrameToFIFO(int frameRAM, int ID) {
@@ -215,15 +248,15 @@ public class PageTable {
 		return(!Memory.FIFO.get(elementIndex).bit);
 	}
 	
+	// TODO
 	private static int getVirtualFrameOfOtherProcess() {
-		// TODO
 		return 0;
 	}
 	
 	public static void writeToMemory(int logicalAdress, char character) {
 		if(isFrameInRAM(getVirtualFrame(logicalAdress))) {
 			// TODO: set bit innego procesu?			
-			int ID = ControlBlock.ID; 	// TODO: wziac ID z obecnego procesu
+			int ID = Running.ID;
 			int frameRAM = frameNumber[getVirtualFrame(logicalAdress)];
 			for(FIFOFrame e : Memory.FIFO)
 				if(e.ID == ID && e.number == frameRAM)
@@ -234,12 +267,23 @@ public class PageTable {
 			writeFrameToRAM(getVirtualFrame(logicalAdress));
 			writeCharToRAM(logicalAdress, character);
 		}
+		firstFreeLogicalAdress++;
 	}
 	
 	private static void writeCharToRAM(int logicalAdress, char character) {
 		int frameInRAM = frameNumber[getVirtualFrame(logicalAdress)];
 		int offset = getVirtualOffset(logicalAdress);
 		Memory.writeCharToRAM(frameInRAM, offset, character);
-
+		
 	}
+	
+	public static int getLogicalAdressOfMessageToWrite(int messageSize) {
+		if((firstFreeLogicalAdress+messageSize) > processSize) {
+			System.out.println("Memory: message is too long");
+			return -1;
+		}
+		else
+			return firstFreeLogicalAdress;
+	}
+
 }

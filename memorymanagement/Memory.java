@@ -7,9 +7,8 @@ public class Memory {
 	private static final int RAM_SIZE = 128;
 	private static char[] RAM = new char[RAM_SIZE];
 	protected static Boolean[] freeFrames = new Boolean[RAM_SIZE/FRAME_SIZE];	
-	private static ArrayList<ArrayList<Character>> virtualMemory = new  ArrayList<ArrayList<Character>>();
+	protected static ArrayList<ArrayList<Character>> virtualMemory = new  ArrayList<ArrayList<Character>>();
 	protected static ArrayList<FIFOFrame> FIFO = new ArrayList<FIFOFrame>();
-	
 
 	public static void init() {
 		for(int i=0;i<(RAM_SIZE/FRAME_SIZE);i++) {
@@ -22,7 +21,7 @@ public class Memory {
 		ArrayList<Character> temp = new ArrayList<Character>(FRAME_SIZE);
 		for(int i=0;i<FRAME_SIZE;i++)
 			temp.add(' ');		
-		for(int i=0;i<100;i++) {			
+		for(int i=0;i<2;i++) {			
 			virtualMemory.add(temp);
 		}		
 	}
@@ -123,12 +122,21 @@ public class Memory {
 	}	
 	
 	protected static void rewriteFromRAMToVirtualMemory(int frameRAM, int frameVirtual) {
-		// TODO
+		// TODO?
 		frameVirtual = frameRAM;
 		ArrayList<Character> temp = new ArrayList<Character>();
 		for(int i=0;i<FRAME_SIZE;i++)
 			temp.add(RAM[FRAME_SIZE*frameRAM+i]);
 		virtualMemory.set(frameVirtual, temp);
+	}
+	
+	// TODO: przetestowac
+	protected static void rewriteFromRAMToVirtualMemoryOfOtherProcess(int frameRAM, int frameVirtual, int virtualBase) {
+		frameVirtual = frameRAM;
+		ArrayList<Character> temp = new ArrayList<Character>();
+		for(int i=0;i<FRAME_SIZE;i++)
+			temp.add(RAM[FRAME_SIZE*frameRAM+i]);
+		virtualMemory.set(virtualBase + frameVirtual, temp);
 	}
 	
 	protected static void writeCharToRAM(int frame, int offset, char character) {
