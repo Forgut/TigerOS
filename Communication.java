@@ -1,11 +1,23 @@
+package Communication;
+
 import java.util.LinkedList;
 import java.util.Scanner;
+
+import processManagement.process_control_block;
+import memorymanagement.Memory;
 
 public class Communication
 {
 	//variables
 	private LinkedList<Pipe> pipes = new LinkedList<Pipe>();
-	//private process_control_block pcb; //process which is running right now
+	private process_control_block pcb; //process running
+	private Memory memory; //process running
+	
+	public Communication(process_control_block pcb, Memory memory)
+	{
+		this.pcb = pcb;
+		this.memory = memory;
+	}
 	
 	//methods
 	public int createPipe(String pipeName)
@@ -14,7 +26,7 @@ public class Communication
 		{
 			if(pipes.get(i).getName().equals(pipeName) ) 
 				{
-					// System.out.println("The pipe exists.."); // TODO: komunikat czy nie?
+					System.out.println("The pipe already exists.");
 					return 0;
 				}
 		}
@@ -31,12 +43,11 @@ public class Communication
 				return 1;
 			}
 		}
-		// System.out.println("Nie ma takiego lacza."); // TODO: komunikat czy nie
+		System.out.println("The pipe does not exist.");
 		return 0;
 	}
-	public int readPipe(String pipeName, int numberOfSigns, int memoryAddress, process_control_block pcb)
+	public int readPipe(String pipeName, int numberOfSigns, int memoryAddress)
 	{
-		//this.pcb = pcb;
 		for(int i =0;i< pipes.size();i++) // przegląd łącz
 		{	
 			if(pipes.get(i).getName().equals(pipeName)) // szukanie łącza o danej nazwie
@@ -45,15 +56,15 @@ public class Communication
 				{
 					boolean isEmpty = false;
 					if(pipes.get(i).data.size() == 0) 
-						{
-							isEmpty = true; // jeśli pusty
-							pipes.get(i).lock.lock(pcb,isEmpty);
-						}
+					{
+						isEmpty = true; // jeśli pusty
+						pipes.get(i).lock.lock(pcb,isEmpty);
+					}
 					else 
-						{
-							isEmpty = false; // jeśli coś zawiera
-							pipes.get(i).lock.lock(pcb);
-						}
+					{
+						isEmpty = false; // jeśli coś zawiera
+						pipes.get(i).lock.lock(pcb);
+					}
 					
 					PageTableObiekt.writeToMemory(memoryAddress + j, pipes.get(i).data.removeFirst() ); // zapisywanie do pamięci, moduł NATALIA 
 					if(pipes.get(i).data.size() == 0) isEmpty = true; 
@@ -62,11 +73,15 @@ public class Communication
 				}
 				return 1;
 			}
-			else return 0;
+			else 
+			{	
+				System.out.println("The pipe does not exist."); // TODO: komunikat czy nie
+				return 0;
+			}
 		}
-		// System.out.println("Nie ma takiego lacza."); // TODO: komunikat czy nie
+		
 	}
-	public int writePipe(String pipeName, String message, process_control_block pcb)
+	public int writePipe(String pipeName, String message)
 	{
 		//this.pcb = pcb;
 		boolean isEmpty = false;
@@ -85,13 +100,16 @@ public class Communication
 					}
 				return 1;
 			}
-			else return 0;
-		}
-		// System.out.println("Nie ma takiego łącza."); // TODO: komunikat czy nie?
-		
+			else 
+			{	
+				System.out.println("The pipe does not exist.");
+				return 0;
+			}
+		}		
 	}
 	public void showAllPipes()
 	{
+		System.out.println("Pipes: ");
 		for(int i = 0;i< pipes.size();i++)
 		{	
 			System.out.print(pipes.get(i).getName() + ": " + pipes.get(i).getData().toString() + '\n');
