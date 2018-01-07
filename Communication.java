@@ -8,26 +8,33 @@ public class Communication
 	//private process_control_block pcb; //process which is running right now
 	
 	//methods
-	public void createPipe(String pipeName)
+	public int createPipe(String pipeName)
 	{
 		for(int i =0;i< pipes.size();i++)
 		{
 			if(pipes.get(i).getName().equals(pipeName) ) 
 				{
 					// System.out.println("The pipe exists.."); // TODO: komunikat czy nie?
-					return;
+					return 0;
 				}
 		}
 		pipes.add(new Pipe(pipeName));
+		return 1;
 	}
 	public void deletePipe(String pipeName)
 	{
 		for(int i =0;i< pipes.size();i++) // przegląd łącz
 		{	
-			if(pipes.get(i).getName().equals(pipeName) ) pipes.remove(i);
+			if(pipes.get(i).getName().equals(pipeName) ) 
+			{
+				pipes.remove(i);
+				return 1;
+			}
 		}
+		// System.out.println("Nie ma takiego lacza."); // TODO: komunikat czy nie
+		return 0;
 	}
-	public void readPipe(String pipeName, int numberOfSigns, int memoryAddress, process_control_block pcb)
+	public int readPipe(String pipeName, int numberOfSigns, int memoryAddress, process_control_block pcb)
 	{
 		//this.pcb = pcb;
 		for(int i =0;i< pipes.size();i++) // przegląd łącz
@@ -53,12 +60,13 @@ public class Communication
 					else isEmpty = true;
 					pipes.get(i).lock.unlock();
 				}
-				return;
+				return 1;
 			}
+			else return 0;
 		}
 		// System.out.println("Nie ma takiego lacza."); // TODO: komunikat czy nie
 	}
-	public void writePipe(String pipeName, String message, process_control_block pcb)
+	public int writePipe(String pipeName, String message, process_control_block pcb)
 	{
 		//this.pcb = pcb;
 		boolean isEmpty = false;
@@ -75,8 +83,9 @@ public class Communication
 						else isEmpty = false;
 						pipes.get(i).lock.unlock();
 					}
-				return;
+				return 1;
 			}
+			else return 0;
 		}
 		// System.out.println("Nie ma takiego łącza."); // TODO: komunikat czy nie?
 		
