@@ -11,7 +11,7 @@ private int ID,
 			priorytet_dynamiczny,
 			licznik_wykonanych_rozkazow;
 /*NATALIA*/
-private PageTable PageTable;
+public PageTable Page_table;
 private int virtualBase;
 private int rozmiar_tablicy_stronic, start_kodu_procesu /*w pliku wymiany*/;
 /*Koniec*/
@@ -20,7 +20,7 @@ private String file_name; //nazwa pliku w ktorym sie znajduje kod procesu
 /*ADAM ???*/
 private klasa_adama rejestry_procesora;
 /*koniec*/
-private int R1,R2,R3,R4; //rejsetry dla interpretera w ktorych moze sobie zapamietywac rzeczy
+private int R1,R2,R3; //rejsetry dla interpretera w ktorych moze sobie zapamietywac rzeczy
 						  //Bartoszek tak powiedzial Mili
 private int stan;
 public void setName(String a) {
@@ -89,9 +89,6 @@ public int SetR2(int a){
 public int SetR3(int a){
 	if (a>=0) {R3=a; return 0;}else {return 1;}
 }
-public int SetR4(int a){
-	if (a>=0) {R4=a; return 0;}else {return 1;}
-}
 public void Setstan(int a) {//0 -gotowy 1 - oczekujacy 2-zakonczony
 	stan=a;
 }
@@ -105,7 +102,7 @@ public process_control_block(int a) {//osobny konstruktor dla procesu bezczynnos
 	setPriorytet_Bazowy(0);
 	ID=nowe_id;
 	nowe_id++;
-	licznik_rozkazow=licznik_wykonanych_rozkazow=rozmiar_tablicy_stronic=start_kodu_procesu=R1=R2=R3=R4=0;
+	licznik_rozkazow=licznik_wykonanych_rozkazow=rozmiar_tablicy_stronic=start_kodu_procesu=R1=R2=R3=0;
 	SetFile_name("");
 	Setstan(0);	
 }
@@ -121,15 +118,15 @@ public process_control_block(String nname) {
 	licznik_rozkazow=priorytet_bazowy=priorytet_dynamiczny=licznik_wykonanych_rozkazow=0;
 }
 public process_control_block(boolean czasu_rzeczywistego,String nname,int licznik_rozk,int rozmiar_tab_stronic,int start_kodu_proc,
-		String file_nam,int nR1,int nR2,int nR3,int nR4,int state,int process_size) {
+		String file_nam,int nR1,int nR2,int nR3,int state,int process_size,Memory memory) {
 	Name=nname;
 	this.czasu_rzeczywistego=czasu_rzeczywistego;
 	ID=nowe_id;
 	nowe_id++;
 	licznik_rozkazow=licznik_rozk;
 	setPriorytet_Bazowy(Losuj_priorytet(czasu_rzeczywistego));
-	this.PageTable=new PageTable(file_nam,process_size);
-	virtualBase=PageTable.getVirtualBase();
+	this.Page_table=new PageTable(file_nam,process_size,memory);
+	virtualBase=Page_table.getVirtualBase();
 	licznik_wykonanych_rozkazow=0;
 	Setrozmiar_tablicy_stronic(rozmiar_tab_stronic);
 	start_kodu_procesu=start_kodu_proc;
@@ -137,7 +134,6 @@ public process_control_block(boolean czasu_rzeczywistego,String nname,int liczni
 	SetR1(nR1);
 	SetR2(nR2);
 	SetR3(nR3);
-	SetR4(nR4);
 	Setstan(state);
 }
 public int getID() {
@@ -162,7 +158,7 @@ public int getLicznik_wykonanych_rozkazow() {
 	return licznik_wykonanych_rozkazow;
 }
 public PageTable getInformacja_o_zarzadzaniu_pamiecia() {
-	return PageTable;
+	return Page_table;
 }
 public int getRozmiar_tablicy_stronic() {
 	return rozmiar_tablicy_stronic;
@@ -182,10 +178,11 @@ public int getR2() {
 public int getR3() {
 	return R3;
 }
-public int getR4() {
-	return R4;
-}
 public int getStan() {
 	return stan;
+}
+public void print() {
+	System.out.println("Proces: " + this.Name + " ID: " + this.ID);
+	System.out.println("Priorytet: " + this.priorytet_dynamiczny + " Licznik wykonanych: " + this.licznik_rozkazow);
 }
 }
