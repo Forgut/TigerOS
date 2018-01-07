@@ -4,19 +4,16 @@ import java.util.LinkedList;
 import java.util.Scanner;
 
 import processManagement.process_control_block;
-import memorymanagement.Memory;
 
 public class Communication
 {
 	//variables
 	private LinkedList<Pipe> pipes = new LinkedList<Pipe>();
 	private process_control_block pcb; //process running
-	private Memory memory; //process running
 	
-	public Communication(process_control_block pcb, Memory memory)
+	public Communication(process_control_block pcb)
 	{
 		this.pcb = pcb;
-		this.memory = memory;
 	}
 	
 	//methods
@@ -66,7 +63,7 @@ public class Communication
 						pipes.get(i).lock.lock(pcb);
 					}
 					
-					PageTableObiekt.writeToMemory(memoryAddress + j, pipes.get(i).data.removeFirst() ); // zapisywanie do pamięci, moduł NATALIA 
+					pcb.pageTable.writeToMemory(memoryAddress + j, pipes.get(i).data.removeFirst() ); // zapisywanie do pamięci, moduł NATALIA 
 					if(pipes.get(i).data.size() == 0) isEmpty = true; 
 					else isEmpty = true;
 					pipes.get(i).lock.unlock();
