@@ -21,7 +21,7 @@ public class Communication
 		pipes.add(new Pipe(pipeName));
 		return 1;
 	}
-	public void deletePipe(String pipeName)
+	public int deletePipe(String pipeName)
 	{
 		for(int i =0;i< pipes.size();i++) // przegląd łącz
 		{	
