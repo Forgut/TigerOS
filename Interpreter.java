@@ -3,7 +3,7 @@ import java.util.ArrayList;
 public class Interpreter {
 
 	private int Reg_A=0, Reg_B=0, Reg_C=0;
-	private bool Flag_E = 0;		//Flaga do bledu wykonywania rozkazu
+	//private bool Flag_E = 0;		//Flaga do bledu wykonywania rozkazu
 	private Processor processor;
 	private Memory memory;
 	private Communication communication;
@@ -153,27 +153,57 @@ public class Interpreter {
 //-----------------------------------------------------------------------	PLIKI
 		
 		case "CE": // Tworzenie pliku
-			filesystem.createEmptyFile(P1);
+			if(filesystem.createEmptyFile(P1)==1) {
+				filesystem.createEmptyFile(P1);
+			}
+			else {
+				Running.SetStan(2);
+			}
 			break;
 			
 		case "CF": // Tworzenie pliku
 			if (What) {
-				filesystem.createFile(P1, GetValue(P2));
+				if(filesystem.createFile(P1, GetValue(P2))==1) {
+					filesystem.createFile(P1, GetValue(P2));
+				}
+				else{
+					Running.SetStan(2);
+				}
 			} else {
-				filesystem.createFile(P1, P2);
+				if(filesystem.createFile(P1, P2)==1) {
+					filesystem.createFile(P1, P2);
+				}
+				else {
+					Running.SetStan(2);
+				}
 			}
 			break;
 			
 		case "WF": // Dopisanie do pliku
 			if (What) {
-				filesystem.appendToFile(P1, GetValue(P2);
+				if(filesystem.appendToFile(P1, GetValue(P2)==1){
+					filesystem.appendToFile(P1, GetValue(P2);
+				}
+				else {
+					Running.SetStan(2);
+				}
 			} else {
-				filesystem.appendToFile(P1, P2);
+				if(filesystem.appendToFile(P1, P2)==1) {
+					filesystem.appendToFile(P1, P2);
+				}
+				else {
+					Running.SetStan(2);
+				}
 			}
 			break;
 			
 		case "DF": // Usuwanie pliku
-			filesystem.deleteFile(P1);
+			if(filesystem.deleteFile(P1)==1) {
+				filesystem.deleteFile(P1);
+			}
+			else {
+				Running.SetStan(2);
+			}
 			break;
 			
 		case "RF": // Czytanie pliku														//TODO
@@ -202,12 +232,27 @@ public class Interpreter {
 
 //-----------------------------------------------------------------------	PROCESY
 	
-		case "XR": // czytanie komunikatu;													//TODO
-			communication.readPipe(P1, P2, memory.freeLogicAdress(P2));
+		case "XR": // czytanie komunikatu;									
+			if(memory.getLogicalAdressOfMessageToWrite(P2)!= -1) {
+				if(communication.readPipe(P1, P2, memory.getLogicalAdressOfMessageToWrite(P2))==1) {
+					communication.readPipe(P1, P2, memory.getLogicalAdressOfMessageToWrite(P2));
+				}
+				else {
+					Running.SetStan(2);
+				}
+			}
+			else {
+				Running.SetStan(2);
+			}
 			break;
 	
 		case "XS": // -- Wys�anie komunikatu;
-			communication.writePipe(P1, P2);
+			if(communication.writePipe(P1, P2)==1) {
+				communication.writePipe(P1, P2);
+			}
+			else {
+				Running.SetStan(2);
+			}
 			break;
 	
 		case "XF": // -- znalezienie ID procesu (P1);
@@ -215,12 +260,22 @@ public class Interpreter {
 			break;
 			
 		case "XP": // -- Stworzenie potoku
-			communication.createPipe(P1);
+			if(communication.createPipe(P1)==1) {
+				communication.createPipe(P1);
+			}
+			else {
+				Running.SetStan(2);
+			}
 			break;
 	
-		case "XC": {// -- tworzenie procesu (P1,P2);
-			manager.createprocess(P1,P2);
-			break; }
+		case "XC": // -- tworzenie procesu (P1,P2);
+			if(manager.createprocess(P1,P2)==1) {
+				manager.createprocess(P1,P2);
+			}
+			else {
+				Running.SetStan(2);
+			}
+			break; 
 	
 		case "XZ": // -- wstrzymanie procesu
 			Running.SetStan(1);
