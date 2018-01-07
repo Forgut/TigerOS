@@ -220,9 +220,9 @@ public class Interpreter {
 			CMDCounter = Integer.parseInt(P1);
 			break;
 			
-		case "JX": // Skok do rozkazu, je�li rejestr = 0
-			if(GetValue(P1)==0) {
-				CMDCounter = Integer.parseInt(P2);
+		case "JX": // Skok do rozkazu, je�li rejestr != 0
+			if(GetValue(P1)!=0) {
+				CMDCounter = Integer.parseInt(P2) + Running.getLicznik_rozkazow();
 			}
 			break;
 
@@ -234,8 +234,9 @@ public class Interpreter {
 	
 		case "XR": // czytanie komunikatu;									
 			if(memory.getLogicalAdressOfMessageToWrite(P2)!= -1) {
-				if(communication.readPipe(P1, P2, memory.getLogicalAdressOfMessageToWrite(P2))==1) {
-					communication.readPipe(P1, P2, memory.getLogicalAdressOfMessageToWrite(P2));
+				processor.SetValue("C", memory.getLogicalAdressOfMessageToWrite(P2));
+				if(communication.readPipe(P1, P2, GetValue("C"))){
+					communication.readPipe(P1, P2, GetValue("C"));
 				}
 				else {
 					Running.SetStan(2);
