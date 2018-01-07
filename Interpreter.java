@@ -237,7 +237,14 @@ public class Interpreter {
 				processor.SetValue("C", memory.getLogicalAdressOfMessageToWrite(P2));
 				if(communication.readPipe(P1, P2, GetValue("C"))){
 					communication.readPipe(P1, P2, GetValue("C"));
-					processor.SetValue("B", memory.GetData("C", P2));
+					int od=GetValue("C");
+					int ile = parseInt(P2);
+					String pom = "";
+					do {
+						pom+=memory.readFromMemory(od);
+						od++;
+					}while (pom.length()!=ile);
+					processor.SetValue("B", pom);
 				}
 				else {
 					Running.SetStan(2);
@@ -324,7 +331,7 @@ public class Interpreter {
 		int Counter=0;
 		
 		do{ 
-			Instruction += memory.GetChar(CMDCounter, PCB_b.ID); //pobieranie z pami�ci znaku o danym numerze, oraz nale��cego do danego procesu
+			Instruction += memory.readFromMemory(CMDCounter); //pobieranie z pami�ci znaku o danym numerze, oraz nale��cego do danego procesu
 
 			CMDCounter++;
 			Counter++;
