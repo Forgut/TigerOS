@@ -30,6 +30,20 @@ public class FileSystem {
 
 	static String response = "";
 
+	// Secondary method for checking value of file's last block index.
+	private int indexOfLastBlock(String name) {
+		int fileNumber = fileNumberSetter(name);
+		int lastBlockIndex = mainCatalog.get(fileNumber).indexOfFirstBlock;
+		int lastBlockValue = fileAllocationTable[lastBlockIndex];
+		while (lastBlockValue != -1) {
+			if (lastBlockValue == -2)
+				break;
+			lastBlockIndex = lastBlockValue;
+			lastBlockValue = fileAllocationTable[lastBlockIndex];
+		}
+		return lastBlockIndex;
+	}
+
 	// Secondary method for finding first free block for new file.
 	private int findFreeBlock() {
 		int freeBlock = -1;
@@ -54,38 +68,12 @@ public class FileSystem {
 		return available;
 	}
 
-	// Creating a empty file.
-	private boolean createEmptyFile(String name) {
-		if (!checkNameAvailability(name)) {
-			response = "Name " + name + " is occupied.";
-			System.out.println(response);
-			return false;
-		} else {
-			int newBlock = findFreeBlock();
-			if (newBlock != -1) {
-				bitVector[newBlock] = true;
-				File plik = new File(name, 0, newBlock);
-				mainCatalog.add(plik);
-				fileAllocationTable[newBlock] = -1;
-				response = "File named \"" + name + "\" was created.";
-				System.out.println(response);
-				return true;
-			} else {
-				response = "Cannot find free block.";
-				System.out.println(response);
-				return false;
-			}
-		}
-	}
-
 	// Open file. If it finds file with exact name changes its open flag to "true";
 	private void openFile(String name) {
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name == name) {
 				mainCatalog.get(i).open = true;
-				response = "File " + name + " opened.";
-				System.out.println(response);
-				// TODO: Add mutex lock
+				System.out.println("FileSystem: File " + name + " opened.");
 				break;
 			}
 		}
@@ -96,9 +84,7 @@ public class FileSystem {
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name == name) {
 				mainCatalog.get(i).open = false;
-				response = "File " + name + " closed.";
-				System.out.println(response);
-				// TODO: Add mutex lock
+				System.out.println("FileSystem: File " + name + " closed.");
 				break;
 			}
 		}
@@ -116,18 +102,28 @@ public class FileSystem {
 		return size;
 	}
 
+	// Return firstIndex of file.
+	private int getFileFirstIndex(String name) {
+		int index = 0;
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				index = mainCatalog.get(i).indexOfFirstBlock;
+				break;
+			}
+		}
+		return index;
+	}
+
 	// Check if file have space in last block.
 	private boolean isFileHaveSpace(String name) {
 		boolean have = false;
-		if (getFileSize(name) % BLOCK_SIZE != 0)
+		if (getFileSize(name) % BLOCK_SIZE != 0 || getFileSize(name) == 0)
 			have = true;
 		return have;
 	}
 
-	
-
 	// Return number of free blocks.
-	public int numberOfFreeBlocks() {
+	private int numberOfFreeBlocks() {
 		int freeBlocks = 0;
 		for (int i = 0; i < NUMBER_OF_BLOCKS; i++)
 			if (bitVector[i] == false)
@@ -141,10 +137,11 @@ public class FileSystem {
 		int freeMemory = BLOCK_SIZE * numberOfFreeBlocks();
 		if (isFileHaveSpace(name)) {
 			int size = getFileSize(name);
-			int howMany = size%32;
-			freeMemory+=howMany;
+			int howMany = size % 32;
+			freeMemory += howMany;
 		}
-		if(freeMemory>= neededSpace) isEnough = true;
+		if (freeMemory >= neededSpace)
+			isEnough = true;
 		return isEnough;
 
 	}
@@ -154,6 +151,16 @@ public class FileSystem {
 		int freeSpace = 0;
 		freeSpace = BLOCK_SIZE - getFileSize(name) % BLOCK_SIZE;
 		return freeSpace;
+	}
+
+	// Increase size of updated file.
+	private void increaseFileSize(String name, int amount) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				mainCatalog.get(i).size += amount;
+				break;
+			}
+		}
 	}
 
 	// Secondary method for setting file number in catalog.
@@ -168,170 +175,71 @@ public class FileSystem {
 		return tempFileNumber;
 	}
 
-	// Secondary method for checking value of file's last block index.
-	private int indexOfLastBlock(String name) {
-		int fileNumber = fileNumberSetter(name);
-		int lastBlockIndex = mainCatalog.get(fileNumber).indexOfFirstBlock;
-		int lastBlockValue = fileAllocationTable[lastBlockIndex /*- 1*/];
-		while (lastBlockValue != -1) {
-			if (lastBlockValue == -2)
-				break;
-			lastBlockIndex = lastBlockValue;
-			// System.out.println(lastBlockIndex+" lastBlockIndex");
-			lastBlockValue = fileAllocationTable[lastBlockIndex];
-		}
-		System.out.println(lastBlockIndex + "    returned lastBlockIndex");
-		return lastBlockIndex; /* Return last block index number (from 1-32) */
+	// Fill new block with data.
+	private void fillNewBlock(int newBlock, String charTable) {
+		int index = newBlock * BLOCK_SIZE;
+		for (int i = 0; i < charTable.length(); i++, index++)
+			dataArea[index] = charTable.charAt(i);
 	}
 
-	/*
-	 * Secondary method for checking value of index where method should start
-	 * appending.
-	 */
-	/*
-	 * private int indexOfWritingStart(int fileNumber) { int size = 0; if
-	 * (mainCatalog.get(fileNumber).size > BLOCK_SIZE) size =
-	 * mainCatalog.get(fileNumber).size % BLOCK_SIZE; else size =
-	 * mainCatalog.get(fileNumber).size; return
-	 * indexOfLastBlock(mainCatalog.get(fileNumber).name) + size - 1; }
-	 */
+	// Fill with data block which still has some free space to use.
+	private void fillNotFullBlock(String name, String charTable) {
+		int index = indexOfLastBlock(name) * BLOCK_SIZE + getFileSize(name) % BLOCK_SIZE;
+		for (int i = 0; i < charTable.length(); i++) {
+			dataArea[index] = charTable.charAt(i);
+			index++;
+		}
+	}
 
-	// Secondary method for checking value of index
-	private int findIndex(int value) {
-		int searchedIndex = -1;
+	// Amplify file entry in FAT.
+	private void amplifyEntry(String name, int newBlock) {
+		fileAllocationTable[indexOfLastBlock(name)] = newBlock;
+		fileAllocationTable[newBlock] = -1;
+
+	}
+
+	// Making amount of file blocks narrower by removing last FAT node.
+	private void taperEntry(String name) {
+		int lastBlock = indexOfLastBlock(name);
 		for (int i = 0; i < NUMBER_OF_BLOCKS; i++) {
-			if (fileAllocationTable[i] == value) {
-				searchedIndex = i;
-				break;
-			}
+			if (fileAllocationTable[i] == lastBlock)
+				fileAllocationTable[i] = -1;
 		}
-		return searchedIndex;
+		fileAllocationTable[lastBlock] = -2;
 	}
 
-	// Delete file.
-	public void deleteFile(String name) {
-		if (checkNameAvailability(name)) {
-			response = "File " + name + " doesn't exist.";
-			System.out.println(response);
+	// Remove any informations from catalog about file.
+	private void removeDirectoryEntry(String name) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				mainCatalog.remove(i);
+			}
+		}
+	}
+
+	// Creating a empty file.
+	public boolean createEmptyFile(String name) {
+		if (!checkNameAvailability(name)) {
+			System.out.println("FileSystem: Name " + name + " is occupied");
+			return false;
 		} else {
-			int fileNumber = fileNumberSetter(name);
-			int charactersDeleted = 0;
-			int i = mainCatalog.get(fileNumber).size;
-			System.out.println(i + "           i");
-
-			if (mainCatalog.get(fileNumber).size <= BLOCK_SIZE) {
-				int j = 0;
-				while (charactersDeleted != mainCatalog.get(fileNumber).size) {
-
-					dataArea[indexOfLastBlock(name) * 32 + i-- - 1] = ' ';
-					charactersDeleted++;
-				}
-				fileAllocationTable[mainCatalog.get(fileNumber).indexOfFirstBlock] = -2;
-				bitVector[mainCatalog.get(fileNumber).indexOfFirstBlock] = false;
-				mainCatalog.remove(fileNumber);
-				response = "File " + name + " has been deleted..";
-				System.out.println(response);
-			} else {
-				while (mainCatalog.get(fileNumber).size > 0) {
-					int tempSize;
-
-					if (mainCatalog.get(fileNumber).size > 0 && mainCatalog.get(fileNumber).size % 32 == 0)
-						tempSize = 32;
-					else
-						tempSize = mainCatalog.get(fileNumber).size % 32;
-					i = tempSize;
-					int test = i;
-					System.out.println(tempSize + "    tempSize");
-					while (charactersDeleted != tempSize) {
-						// System.out.println(indexOfLastBlock(name) * 32 + i-- -1 +"
-						// indexOfLastBlock(name) * 32 + i-- -1");
-						dataArea[(indexOfLastBlock(name) - 1) * 32 + i-- - 1] = ' ';
-						charactersDeleted++;
-					}
-
-					bitVector[indexOfLastBlock(name) - 1] = false;
-					fileAllocationTable[findIndex(indexOfLastBlock(name))] = -1;
-					fileAllocationTable[indexOfLastBlock(name)] = -2;
-
-					mainCatalog.get(fileNumber).size -= charactersDeleted;
-					charactersDeleted = 0;
-				}
-				mainCatalog.remove(fileNumber);
-				response = "File " + name + " has been deleted..";
-				System.out.println(response);
-			}
-
-		}
-	}
-
-	// Add text to file.
-	public void appendToFile(String name, String content) {
-		
-	}
-	
-	
-	/*public void appendToFile(String name, String content) {
-		char[] contentArray = content.toCharArray();
-		int fileNumber = fileNumberSetter(name);
-		int charactersAdded = 0;
-		int sizeIncrease = 0;
-		if (fileNumber == -1) {
-			response = "File " + name + " doesn't exist.";
-			System.out.println(response);
-			return;
-		}
-		System.out.println(mainCatalog.get(fileNumber).size % 32 + content.length() + "       size +len");
-
-		if (mainCatalog.get(fileNumber).size % 32 + content.length() <= BLOCK_SIZE) {
-			int i = mainCatalog.get(fileNumber).size % 32, j = 0;
-			while (charactersAdded != content.length()) {
-				System.out.println(indexOfLastBlock(name) + " indexOfLastBlock(name)");
-				dataArea[(indexOfLastBlock(name) - 1) * 32 + i++] = contentArray[j++];
-				sizeIncrease++;
-				charactersAdded++;
-			}
-			mainCatalog.get(fileNumber).size += content.length();
-			response = "File " + name + " has been extended..";
-			System.out.println(response);
-		} else {
-			int newBlockAmount;
-			if (((mainCatalog.get(fileNumber).size % 32 + content.length()) % 32) == 0)
-				newBlockAmount = content.length() / 32;
-			else
-				newBlockAmount = content.length() / 32 + 1;
-
-			while (newBlockAmount != 0) {
-
-				int newBlock = findFreeBlock();
-				System.out.println(newBlock + "       newBlock");
-
-				fileAllocationTable[indexOfLastBlock(name)] = newBlock;
-				fileAllocationTable[newBlock] = -1;
-
-				for (int i = mainCatalog.get(fileNumber).size % 32; i < 32; i++) {
-					dataArea[((indexOfLastBlock(name) - 1) * 32) + i] = contentArray[charactersAdded];
-					charactersAdded++;
-					sizeIncrease++;
-					if (charactersAdded == content.length()) {
-						mainCatalog.get(fileNumber).size += sizeIncrease;
-						response = "File " + name + " has been extended..";
-						System.out.println(response);
-						return;
-					}
-				}
+			int newBlock = findFreeBlock();
+			if (newBlock != -1) {
 				bitVector[newBlock] = true;
-				mainCatalog.get(fileNumber).size += sizeIncrease;
-				newBlockAmount--;
-				sizeIncrease = 0;
-
+				File plik = new File(name, 0, newBlock);
+				mainCatalog.add(plik);
+				fileAllocationTable[newBlock] = -1;
+				System.out.println("FileSystem: File " + name + " was created.");
+				return true;
+			} else {
+				System.out.println("FileSystem: Cannot find free block.");
+				return false;
 			}
-			response = "File " + name + " has been extended..";
-			System.out.println(response);
 		}
-
 	}
-*/
-	private void createFile(String name, String content) {
+
+	// Create file with data.
+	public void createFile(String name, String content) {
 		if (!createEmptyFile(name))
 			return;
 		openFile(name);
@@ -340,7 +248,85 @@ public class FileSystem {
 
 	}
 
-	private void showData() {
+	// Add text to file.
+	public void appendToFile(String name, String content) {
+		int indexChar = 0;
+		String charTable = "";
+		if (!checkNameAvailability(name)) {
+			if (isEnoughMemory(name, content.length())) {
+				if (isFileHaveSpace(name)) {
+					for (; indexChar < getNumberOfFreeSpaceInLastBlock(name)
+							&& indexChar < content.length(); indexChar++)
+						charTable += content.charAt(indexChar);
+					fillNotFullBlock(name, charTable);
+					increaseFileSize(name, charTable.length());
+
+				}
+				while (indexChar < content.length()) {
+					charTable = "";
+					for (int i = 0; i < BLOCK_SIZE && indexChar < content.length(); i++, indexChar++)
+						charTable += content.charAt(indexChar);
+					int index = findFreeBlock();
+					amplifyEntry(name, index);
+					fillNewBlock(index, charTable);
+					bitVector[index] = true;
+					increaseFileSize(name, charTable.length());
+				}
+			} else
+				System.out.println("FileSystem: Cannot append to file. Low memory.");
+		} else
+			System.out.println("FileSystem: File " + name + " doesn't exist.");
+	}
+
+	// Delete file.
+	public void deleteFile(String name) {
+		if (!checkNameAvailability(name)) {
+			int size = getFileSize(name);
+			if (size > 0) {
+				int blocks = size / BLOCK_SIZE;
+				if (size % BLOCK_SIZE != 0) {
+					blocks++;
+				}
+				while (blocks > 0) {
+					int index = indexOfLastBlock(name);
+					for (int i = index * BLOCK_SIZE; i < index * BLOCK_SIZE + BLOCK_SIZE; i++) {
+						dataArea[i] = ' ';
+					}
+					bitVector[index] = false;
+					taperEntry(name);
+					blocks--;
+				}
+				removeDirectoryEntry(name);
+				System.out.println("FileSystem: File " + name + " removed.");
+			}
+		} else
+			System.out.println("FileSystem: File " + name + " doesn't exist.");
+	}
+
+	// Prints file's content.
+
+	public void readFile(String name) {
+		int size = getFileSize(name);
+		if (size == 0) {
+			System.out.println("FileSystem: File " + name + " is empty.");
+			return;
+		}
+		int index = getFileFirstIndex(name);
+		System.out.println("FileSystem: File " + name + " contains: \n");
+		do {
+			for (int i = index * BLOCK_SIZE; i < index * BLOCK_SIZE + 32; i++) {
+				System.out.print(dataArea[i]);
+			}
+			int newIndex = fileAllocationTable[index];
+			index = newIndex;
+			if (index == -1)
+				break;
+		} while (true);
+
+	}
+
+	// Prints value of every memory cell.
+	public void showData() {
 		int x = 1;
 		for (int i = 0; i < DISK_SIZE; i++) {
 			if (i % 32 == 0) {
@@ -359,8 +345,9 @@ public class FileSystem {
 
 	}
 
+	// Shows which blocks are used and which aren't.
 	public void showBitVector() {
-		System.out.println("bitVector");
+		System.out.println("bitVector:");
 		int y;
 		for (int i = 0; i < NUMBER_OF_BLOCKS; i++) {
 			if (bitVector[i] == false)
@@ -374,17 +361,58 @@ public class FileSystem {
 		System.out.print("\n");
 	}
 
-	public static void main(String[] args) {
-		System.out.println("START");
-		FileSystem raz = new FileSystem();
-		raz.createFile("plik2", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
-		;
-		raz.showData();
-		raz.appendToFile("plik2", "1");
+	// Shows values of file allocation table.
+	public void showFAT() {
+		System.out.println("File Allocation Table:");
+		for (int i = 1; i <= NUMBER_OF_BLOCKS; i++) {
+			System.out.print("[");
+			System.out.print(i + ": ");
+			if (fileAllocationTable[i - 1] == -1)
+				System.out.print(-1);
+			else if (fileAllocationTable[i - 1] != -2)
+				System.out.print(fileAllocationTable[i - 1] + 1);
+			System.out.print("]");
+			if ((i) % 8 == 0)
+				System.out.print("\n");
+		}
+		System.out.print("\n");
+	}
 
-		raz.showBitVector();
-		raz.showData();
-		System.out.println("KONIEC");
+	// Prints every file from catalog and its informations.
+	public void showMainCatalog() {
+		System.out.println("mainCatalog:");
+		if (mainCatalog.isEmpty()) {
+			System.out.println("Main Catalog is Empty");
+		} else {
+			System.out.println("NR\tNAME\tFIRST BLOCK\tSIZE");
+			for (int i = 0; i < mainCatalog.size(); i++) {
+				System.out.print((i + 1) + "\t");
+				System.out.print(mainCatalog.get(i).name + "\t");
+				System.out.print(mainCatalog.get(i).indexOfFirstBlock + "\t\t");
+				System.out.print(mainCatalog.get(i).size);
+				System.out.print("\n");
+			}
+		}
+		System.out.print("\n");
+	}
+
+	public static void main(String[] args) {
+		/*FileSystem SystemTest = new FileSystem();
+		SystemTest.createFile("plik1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+		SystemTest.createFile("plik2", "aaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+		SystemTest.createFile("plik3", "ccccccccccccccccccccccccccccccccccc");
+		SystemTest.createFile("plik4", "ddddddddddddddddddddddddddddddddddd");
+		SystemTest.deleteFile("plik2");
+		SystemTest.appendToFile("plik1", "dziendobrywarszawo");
+		SystemTest.createFile("plik5", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+
+		// SystemTest.deleteFile("plik1");
+
+		SystemTest.showBitVector();
+		SystemTest.showData();
+		SystemTest.showMainCatalog();
+		SystemTest.showFAT();
+		SystemTest.readFile("plik5");*/
 	}
 
 }
