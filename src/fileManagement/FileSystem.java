@@ -102,6 +102,18 @@ public class FileSystem {
 		return size;
 	}
 
+	// Return size of file.
+	private boolean getFileFlagStatus(String name) {
+		boolean open = false;
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				open = mainCatalog.get(i).open;
+				break;
+			}
+		}
+		return open;
+	}
+
 	// Return firstIndex of file.
 	private int getFileFirstIndex(String name) {
 		int index = 0;
@@ -218,10 +230,10 @@ public class FileSystem {
 	}
 
 	// Creating a empty file.
-	public boolean createEmptyFile(String name) {
+	public int createEmptyFile(String name) {
 		if (!checkNameAvailability(name)) {
 			System.out.println("FileSystem: Name " + name + " is occupied");
-			return false;
+			return 0;
 		} else {
 			int newBlock = findFreeBlock();
 			if (newBlock != -1) {
@@ -230,26 +242,33 @@ public class FileSystem {
 				mainCatalog.add(plik);
 				fileAllocationTable[newBlock] = -1;
 				System.out.println("FileSystem: File " + name + " was created.");
-				return true;
+				return 1;
 			} else {
 				System.out.println("FileSystem: Cannot find free block.");
-				return false;
+				return 0;
 			}
 		}
 	}
 
 	// Create file with data.
-	public void createFile(String name, String content) {
-		if (!createEmptyFile(name))
-			return;
-		openFile(name);
-		appendToFile(name, content);
-		closeFile(name);
+	public int createFile(String name, String content) {
+		if (createEmptyFile(name) == 0) // If file is created -> goes to "else".
+			return 0;
+		else {
+			openFile(name);
+			appendToFile(name, content);
+			closeFile(name);
+			return 1;
+		}
 
 	}
 
 	// Add text to file.
-	public void appendToFile(String name, String content) {
+	public int appendToFile(String name, String content) {
+		if (!getFileFlagStatus(name)) {
+			System.out.println("FileSystem: Cannot append to file. File is closed.");
+			return 0;
+		}
 		int indexChar = 0;
 		String charTable = "";
 		if (!checkNameAvailability(name)) {
@@ -272,14 +291,23 @@ public class FileSystem {
 					bitVector[index] = true;
 					increaseFileSize(name, charTable.length());
 				}
-			} else
+				return 1;
+			} else {
 				System.out.println("FileSystem: Cannot append to file. Low memory.");
-		} else
+				return 0;
+			}
+		} else {
 			System.out.println("FileSystem: File " + name + " doesn't exist.");
+			return 0;
+		}
 	}
 
 	// Delete file.
-	public void deleteFile(String name) {
+	public int deleteFile(String name) {
+		if (!getFileFlagStatus(name)) {
+			System.out.println("FileSystem: Cannot append to file. File is closed.");
+			return 0;
+		}
 		if (!checkNameAvailability(name)) {
 			int size = getFileSize(name);
 			if (size > 0) {
@@ -298,14 +326,22 @@ public class FileSystem {
 				}
 				removeDirectoryEntry(name);
 				System.out.println("FileSystem: File " + name + " removed.");
+
 			}
-		} else
+			return 1;
+		} else {
 			System.out.println("FileSystem: File " + name + " doesn't exist.");
+			return 0;
+		}
 	}
 
 	// Prints file's content.
-
 	public void readFile(String name) {
+		if (!getFileFlagStatus(name)) {
+			System.out.println("FileSystem: Cannot append to file. File is closed.");
+			return;
+		}
+
 		int size = getFileSize(name);
 		if (size == 0) {
 			System.out.println("FileSystem: File " + name + " is empty.");
@@ -398,21 +434,16 @@ public class FileSystem {
 
 	public static void main(String[] args) {
 		/*FileSystem SystemTest = new FileSystem();
-		SystemTest.createFile("plik1", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-		SystemTest.createFile("plik2", "aaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
-		SystemTest.createFile("plik3", "ccccccccccccccccccccccccccccccccccc");
-		SystemTest.createFile("plik4", "ddddddddddddddddddddddddddddddddddd");
-		SystemTest.deleteFile("plik2");
-		SystemTest.appendToFile("plik1", "dziendobrywarszawo");
-		SystemTest.createFile("plik5", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
-
-		// SystemTest.deleteFile("plik1");
-
+		SystemTest.createFile("plik1", "MV A 5,MV C A,SB C 1,ML A C,JX C 14,EX;");
+		SystemTest.createFile("plik2", "MV A 2,MV B 3,AD A B,CF plik A,RF plik,EX;");
+		SystemTest.createFile("plik3", "XC proces1 prog1.txt,XC proces2 prog2.txt,XP potok,EX;");
+		SystemTest.createFile("plik4", "XS potok 5,EX;");
+		SystemTest.createFile("plik5", "XR potok 1 500,MV A B,AD B 5,ML A B,XE potok,EX;");
 		SystemTest.showBitVector();
 		SystemTest.showData();
 		SystemTest.showMainCatalog();
-		SystemTest.showFAT();
-		SystemTest.readFile("plik5");*/
+		SystemTest.showFAT();*/
+
 	}
 
 }
