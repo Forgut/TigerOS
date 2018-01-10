@@ -1,8 +1,9 @@
 package fileManagement;
+
 import mutexLock.MutexLock;
 
 public class File {
-	
+
 	public String name;
 	public int size;
 	public int indexOfFirstBlock;
@@ -12,10 +13,10 @@ public class File {
 	// Object needed for sync.
 	public MutexLock lock = new MutexLock();
 
-	File(String name, int size, int indexOfFirstBlock){
-		this.name=name;
+	File(String name, int size, int indexOfFirstBlock) {
+		this.name = name;
 		this.size = size;
-		this.indexOfFirstBlock= indexOfFirstBlock;
+		this.indexOfFirstBlock = indexOfFirstBlock;
 		open = false;
 		readChars = 0;
 	}
