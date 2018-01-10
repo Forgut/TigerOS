@@ -41,8 +41,8 @@ public class lista_procesow {
 	public void gotowe_na_poczatek() {
 		for (int i = wszystkie_procesy.size() - 1; i >= wszystkie_procesy.size(); i--) {
 			if (wszystkie_procesy.get(i).getStan() == 0) {
-				wszystkie_procesy.set(0, wszystkie_procesy.get(i));
-				wszystkie_procesy.remove(i);
+				wszystkie_procesy.add(0, wszystkie_procesy.get(i));
+				wszystkie_procesy.remove(i+1);
 			}
 		}
 	}
