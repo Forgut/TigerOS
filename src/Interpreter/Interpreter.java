@@ -19,7 +19,7 @@ public class Interpreter {
 	private FileSystem filesystem;
 	//private PCB PCB_b; 			//Zmienna do kopii PCB procesu
 	private int CMDCounter; 	//Licznik rozkazu do czytania z pami ci
-	private int CCKCounter;		//licznik do sprawdzania czy program siê skoñczy³
+	private int CCKCounter;		//licznik do sprawdzania czy program siï¿½ skoï¿½czyï¿½
 	
 //-------------------------------------------------------------------------------------------------------------------
 	
@@ -35,13 +35,12 @@ public class Interpreter {
 	public int RUN(process_control_block Running) {
 		//PCB_b=Running.GetPCB();		 //Wczytanie PCB procesu
 		
-		communication = new Communication(Running); //nie u¿ywna zmienna komunikacji
+		communication = new Communication(Running); //nie uï¿½ywna zmienna komunikacji
 		
 		
 		
 		CCKCounter = 0;
 		CMDCounter = Running.getLicznik_rozkazow(); //Pobieranie licznika rozkar w
-		//System.out.println(CMDCounter + " stan licznika");
 		this.Reg_A = Running.getR1(); //Pobieranie stanu rejestru A
 		this.Reg_B = Running.getR2(); //Pobieranie stanu rejestru B
 		this.Reg_C = Running.getR3(); //Pobieranie stanu rejestru C
@@ -56,7 +55,6 @@ public class Interpreter {
 		//System.out.println(Instruction.length());
 		Running.SetLicznik_rozkazow(Running.getLicznik_rozkazow()+Instruction.length());
 		Execute(Instruction,Running);
-		System.out.println(CMDCounter + " stan licznika");
 		ReturnToPCB(Running);
 		//Running.SetPCB();
 		return 0;
@@ -77,7 +75,6 @@ public class Interpreter {
 		while(i < 5) {
 			if(i == 1) {
 				while(Instruction.charAt(x)!=' ' && Instruction.charAt(x)!=',' && Instruction.charAt(x)!=';') {
-					System.out.println("komenda");
 					CMD += Instruction.charAt(x);
 					CCKCounter++;
 					x++;
@@ -91,7 +88,6 @@ public class Interpreter {
 					break;
 				}
 				else if(Instruction.charAt(x)==';'){
-					System.out.println("srednik");
 					break;
 				}
 			}
@@ -232,7 +228,7 @@ public class Interpreter {
 			break;
 			
 		case "DF": // Usuwanie pliku
-			filesystem.openFile(P1,Running);
+			//filesystem.openFile(P1,Running);
 			if((filesystem.deleteFile(P1))==1) {
 				//filesystem.deleteFile(P1);
 			}
@@ -244,6 +240,7 @@ public class Interpreter {
 		case "RF": // Czytanie pliku
 			filesystem.openFile(P1,Running);
 			filesystem.readFile(P1);
+			filesystem.closeFile(P1);
 			break;
 			
 		case "RN": // Czytanie n znakow z pliku
@@ -254,17 +251,16 @@ public class Interpreter {
 //-----------------------------------------------------------------------	JUMPY I KONCZENIE
 			
 		case "JP": // Skok do rozkazu
-			CMDCounter = Running.getnumery_rozkazow(P1);
+			CMDCounter = Running.getnumery_rozkazow(Integer.parseInt(P1));
 			break;
 			
 		case "JX": // Skok do rozkazu, je li rejestr != 0
 			if(GetValue(P1)!=0) {
-				CMDCounter = Running.getnumery_rozkazow(P2);// + Running.pageTable.getVirtualBase();
+				CMDCounter = Running.getnumery_rozkazow(Integer.parseInt(P2));// + Running.pageTable.getVirtualBase();
 			}
 			break;
 
 		case "EX":
-			System.out.println("exitentah");// Koniec programu
 			Running.Setstan(2);
 			break;	
 

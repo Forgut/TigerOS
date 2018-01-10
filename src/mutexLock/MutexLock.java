@@ -46,7 +46,8 @@ public class MutexLock {
 	public void unlock() {
 		//Jesli kolejka jest pusta, otworz zamek
 		if(queue.isEmpty()) {
-			System.out.println("CurrentProcess value before checking queue: " + currentProcess.getID() + ". Queue is empty. Unlocking lock.");
+			if(currentProcess != null) 
+				System.out.println("CurrentProcess value before checking queue: " + currentProcess.getID() + ". Queue is empty. Unlocking lock.");
 			isLocked = false;
 			currentProcess = null;
 		}

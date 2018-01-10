@@ -50,9 +50,9 @@ public class Communication
 			if(Pipe.pipes.get(i).getName().equals(pipeName)) // szukanie lacza o danej nazwie
 			{
 				Pipe.pipes.get(i).lock.lock(pcb);
-				for(int j = 0; j < numberOfSigns; j++) // czytanie po jednym znaku
+				
+				for(int j = 0; numberOfSigns - Pipe.pipes.get(i).offset > 0; j++) // czytanie po jednym znaku
 				{
-							
 					if(Pipe.pipes.get(i).data.size() == 0) 
 						{	
 							Pipe.pipes.get(i).lock.unlock();	// jezeli pusty to unlock		
@@ -61,12 +61,15 @@ public class Communication
 						}
 					else 
 						{									
-							//int ID = pcb.getID() ;
-							//System.out.println("COMMUNICATION: logical adress = " + (Integer)(memoryAddress + j));
-							pcb.pageTable.writeToMemory(memoryAddress + j, Pipe.pipes.get(i).data.removeFirst(), pcb.getID() ); // zapisywanie do pameci modul: NATALIA 
+							pcb.pageTable.writeToMemory(memoryAddress + Pipe.pipes.get(i).offset, Pipe.pipes.get(i).data.removeFirst(), pcb.getID() ); // zapisywanie do pameci modul: NATALIA 
+							Pipe.pipes.get(i).offset++;
 							Pipe.pipes.get(i).lock.unlock();
 						}
-					return 1;
+					if(j == numberOfSigns-1) 
+						{
+							Pipe.pipes.get(i).offset = 0;
+							return 1;
+						}
 				}
 				//Pipe.pipes.get(i).lock.unlock();
 				

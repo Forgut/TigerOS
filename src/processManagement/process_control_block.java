@@ -148,7 +148,6 @@ public process_control_block(String nname) {
 	licznik_rozkazow=priorytet_bazowy=priorytet_dynamiczny=licznik_wykonanych_rozkazow=0;
 }
 public process_control_block(String nname,String file_nam, Memory memory) {
-	System.out.println("3rdcheck");
 	Name=nname;
 	this.czasu_rzeczywistego=false;
 	ID=nowe_id;
@@ -169,7 +168,13 @@ public void add_numer(int addr) {
 	numery_rozkazow.add(addr);
 }
 public int getnumery_rozkazow(int iter) {
-	return numery_rozkazow.get(0);
+	return numery_rozkazow.get(iter);
+}
+public ArrayList<Integer> getnumery_rozkazow() {
+	return numery_rozkazow;
+}
+public int get_ostatni_numery_rozkazow(){
+	return numery_rozkazow.get(numery_rozkazow.size()-1);
 }
 public int getID() {
 	return ID;

@@ -11,8 +11,6 @@ public class FileSystem {
 	private final int BLOCK_SIZE = 32;
 	private final int NUMBER_OF_BLOCKS = DISK_SIZE / BLOCK_SIZE;
 
-
-
 	// Data structures.
 	private char[] dataArea = new char[DISK_SIZE];
 	private int[] fileAllocationTable = new int[NUMBER_OF_BLOCKS];
@@ -62,7 +60,7 @@ public class FileSystem {
 	private boolean checkNameAvailability(String searchedName) {
 		boolean available = true;
 		for (int i = 0; i < mainCatalog.size(); i++) {
-			if (mainCatalog.get(i).name == searchedName) {
+			if (mainCatalog.get(i).name.equals(searchedName)) {
 				available = false;
 				break;
 			}
@@ -72,24 +70,20 @@ public class FileSystem {
 
 	// Open file. If it finds file with exact name changes its open flag to "true".
 	public void openFile(String name, process_control_block processName) {
-		System.out.println("i'm trying to open file1.");
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name.equals(name)) {
-				System.out.println("i'm trying to open file2.");
 				mainCatalog.get(i).lock.lock(processName);
 				mainCatalog.get(i).open = true;
 				System.out.println("FileSystem: File " + name + " opened.");
 				break;
 			}
-			
-			
-			/*if (mainCatalog.get(i).name == name) {
-				System.out.println("i'm trying to open file2.");
-				mainCatalog.get(i).lock.lock(processName);
-				mainCatalog.get(i).open = true;
-				System.out.println("FileSystem: File " + name + " opened.");
-				break;
-			}*/
+
+			/*
+			 * if (mainCatalog.get(i).name == name) {
+			 * System.out.println("i'm trying to open file2.");
+			 * mainCatalog.get(i).lock.lock(processName); mainCatalog.get(i).open = true;
+			 * System.out.println("FileSystem: File " + name + " opened."); break; }
+			 */
 		}
 	}
 
@@ -226,7 +220,7 @@ public class FileSystem {
 	private int fileNumberSetter(String name) {
 		int tempFileNumber = -1;
 		for (int i = 0; i < mainCatalog.size(); i++) {
-			if (mainCatalog.get(i).name == name) {
+			if (mainCatalog.get(i).name.equals( name)) {
 				tempFileNumber = i;
 				break;
 			}
@@ -260,11 +254,15 @@ public class FileSystem {
 	// Making amount of file blocks narrower by removing last FAT node.
 	private void taperEntry(String name) {
 		int lastBlock = indexOfLastBlock(name);
+		if(lastBlock!=getFileFirstIndex(name))
+		{
 		for (int i = 0; i < NUMBER_OF_BLOCKS; i++) {
 			if (fileAllocationTable[i] == lastBlock)
 				fileAllocationTable[i] = -1;
 		}
 		fileAllocationTable[lastBlock] = -2;
+		}
+		else fileAllocationTable[lastBlock] = -2;
 	}
 
 	// Remove any informations from catalog about file.
@@ -278,7 +276,6 @@ public class FileSystem {
 
 	// Change value of read chars.
 	private void changeNumberOfReadChars(String name, int value) {
-		System.out.println("trying to change number of read chars");
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name.equals(name)) {
 				mainCatalog.get(i).readChars += value;
@@ -381,7 +378,17 @@ public class FileSystem {
 	public int deleteFile(String name) {
 		if (!checkNameAvailability(name)) {
 			int size = getFileSize(name);
-			if (size > 0) {
+			if (size > 0 && size < 32) {
+				int index = getFileFirstIndex(name);
+				for (int i = index * BLOCK_SIZE; i < index * BLOCK_SIZE + BLOCK_SIZE; i++) {
+					dataArea[i] = ' ';
+				}
+				bitVector[index] = false;
+				taperEntry(name);
+				removeDirectoryEntry(name);
+				System.out.println("FileSystem: File " + name + " removed.");
+				return 1;
+			} else if (size > 32) {
 				int blocks = size / BLOCK_SIZE;
 				if (size % BLOCK_SIZE != 0) {
 					blocks++;
@@ -397,9 +404,15 @@ public class FileSystem {
 				}
 				removeDirectoryEntry(name);
 				System.out.println("FileSystem: File " + name + " removed.");
-
+				return 1;
+			} else {
+				int index = indexOfLastBlock(name);
+				bitVector[index] = false;
+				taperEntry(name);
+				removeDirectoryEntry(name);
+				System.out.println("FileSystem: File " + name + " removed.");
+				return 1;
 			}
-			return 1;
 		} else {
 			System.out.println("FileSystem: File " + name + " doesn't exist.");
 			return 0;
@@ -418,7 +431,7 @@ public class FileSystem {
 			return;
 		}
 		int index = getFileFirstIndex(name);
-		System.out.println("FileSystem: File " + name + " contains: \n");
+		System.out.print("FileSystem: File " + name + " contains:");
 		int leftToRead = 0;
 		if (charsToRead.length == 0)
 			leftToRead = getFileSize(name);
@@ -441,10 +454,11 @@ public class FileSystem {
 			System.out.print(dataArea[i]);
 			leftToRead--;
 		}
-		if(charsToRead.length == 0)
-		changeNumberOfReadChars(name, 0);
+		System.out.println();
+		if (charsToRead.length == 0)
+			changeNumberOfReadChars(name, 0);
 		else
-		changeNumberOfReadChars(name, charsToRead[0]);
+			changeNumberOfReadChars(name, charsToRead[0]);
 	}
 
 	// Prints value of every memory cell.
@@ -521,19 +535,21 @@ public class FileSystem {
 	public static void main(String[] args) {
 
 		FileSystem SystemTest = new FileSystem();
-		SystemTest.createFile("plik1","Wp³yn¹³em na suchego przestwór , Wóz nurza siê w zielonoœæ i jak ³ódka brodzi.");
-		
-		//SystemTest.closeFileWithOutProccess("plik1");
-		//SystemTest.appendToFile("plik1", "1");
+		SystemTest.createEmptyFile("plik1");
+		SystemTest.showMainCatalog();
+		SystemTest.deleteFile("plik1");
+		SystemTest.showMainCatalog();
+		// SystemTest.closeFileWithOutProccess("plik1");
+		// SystemTest.appendToFile("plik1", "1");
 		// SystemTest.openFileWithOutProccess("plik1");
 		// SystemTest.readFile("plik1", 15);
 		// SystemTest.readFile("plik1", 15);
 		// SystemTest.closeFileWithOutProccess("plik1");
 		// SystemTest.readFile("plik1", 15);
-		SystemTest.showBitVector();
-		SystemTest.showData();
-		SystemTest.showMainCatalog();
-		SystemTest.showFAT();
+		/*
+		 * SystemTest.showBitVector(); SystemTest.showData();
+		 * SystemTest.showMainCatalog(); SystemTest.showFAT();
+		 */
 
 	}
 

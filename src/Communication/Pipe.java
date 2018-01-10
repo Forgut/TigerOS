@@ -9,6 +9,7 @@ public class Pipe
 	LinkedList<Character> data = new LinkedList<Character>();
 	//protected static int numberOfPipes = 0;
 	protected static LinkedList<Pipe> pipes = new LinkedList<Pipe>();
+	protected int offset = 0;// ile znakow zostalo przeczytanych z zadanej wartosci
 	public Pipe(String name)
 	{
 		this.name = name;

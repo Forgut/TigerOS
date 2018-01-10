@@ -101,14 +101,10 @@ public class ProcessorManager {
 			Running=idleProcess;
 		}
 		
-		int temp=Running.getPriorytet_dynamiczny();
-		
-		//System.out.println("CheckBiggest "+Running.getPriorytet_dynamiczny());
-		
+		int temp=Running.getPriorytet_dynamiczny();		
 		
 		if(temp>7)
 		{
-			//System.out.println("else1234");
 			for(int i=15;i>7;i--)//sprawdzanie jesli Running jest czasu rzeczywistego
 			{
 				if(arr[i]==true)
@@ -131,13 +127,9 @@ public class ProcessorManager {
 			
 		}
 		else
-		{
-		//	System.out.println("CheckBiggest 2 "+Running.getPriorytet_dynamiczny());
-			
+		{			
 			for(int i=15;i>temp;i--)//sprawdzanie czy sa wieksze ktore powinny wywlaszczyc
 			{
-				//System.out.println("CheckBiggest 2: "+i+Running.getPriorytet_dynamiczny());
-
 				if(lista.get(i).size()>0)
 				{
 					
@@ -156,11 +148,8 @@ public class ProcessorManager {
 			}
 			for(int i=7;i>0;i--)//znalezienie innego zamiennika na przyszlosc
 			{
-				//System.out.println("CheckBiggest3 "+Running.getPriorytet_dynamiczny());
-
 				if(lista.get(i).size()>0)
 				{
-				//	System.out.println("146stan running ostat "+Running.getStan());
 					NextRunningProcess=lista.get(i).get(0);
 					
 					
@@ -172,9 +161,7 @@ public class ProcessorManager {
 					return false;
 				}
 				
-			}
-			//System.out.println("CheckBiggest4 "+Running.getPriorytet_dynamiczny());
-			
+			}			
 			NextRunningProcess=idleProcess;
 			return false;
 		}
@@ -211,13 +198,11 @@ public class ProcessorManager {
 	
 	public void IncreaseCounter()
 	{
-	//	System.out.println("zwiekszanie ");
 		for(int i=7;i>=0;i--)//sprawdzanie tylko dla priorytetow 1-7
 		{
 			
 			if(lista.get(i).size()>0)
 			{
-				System.out.println("zwiekszanie ");
 				for(int b=0;b>lista.get(i).size();b++)
 				{
 					
@@ -242,7 +227,6 @@ public class ProcessorManager {
 
 		if(CheckBiggest()==true)
 		{
-			//System.out.println("jest wiekszy");
 			changerunningProcess();
 		}
 
@@ -347,15 +331,12 @@ public class ProcessorManager {
 		}
 		else 
 		{
-			System.out.println("teraz wczesniej "+Running.getPriorytet_bazowy());
 			if(CheckBiggest()) {
 				NextRunningProcess.getPriorytet_bazowy();
 				changerunningProcess();
 			}
 				
 		interpreter.RUN(Running);//odpalanie interpretera
-		//showRunning();
-		 showQueue();
 		if(Running.getStan()==2)
 		{
 			Clear();
