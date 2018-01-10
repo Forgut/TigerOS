@@ -11,15 +11,7 @@ public class File {
 
 	// Object needed for sync.
 	public MutexLock lock = new MutexLock();
-	
-	/*File(){
-		name = "";
-		size=0;
-		indexOfFirstBlock = 0;
-		open = false;
-		readChars = 0;
-	}
-	*/
+
 	File(String name, int size, int indexOfFirstBlock){
 		this.name=name;
 		this.size = size;
