@@ -6,23 +6,20 @@ public class File {
 	public int size;
 	public int indexOfFirstBlock;
 	public boolean open;
-	
+	public int readChars;
 	File(){
 		name = "";
 		size=0;
 		indexOfFirstBlock = 0;
-		open = true;
+		open = false;
+		readChars = 0;
 	}
 	
 	File(String name, int size, int indexOfFirstBlock){
 		this.name=name;
 		this.size = size;
 		this.indexOfFirstBlock= indexOfFirstBlock;
+		open = false;
+		readChars = 0;
 	}
-	
-
-	public static void main(String[] args) {
-		System.out.print("C:");
-	}
-
 }

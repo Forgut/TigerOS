@@ -2,12 +2,17 @@ package fileManagement;
 
 import java.util.ArrayList;
 import java.util.List;
+import mutexLock.MutexLock;
+import processManagement.*;
 
 public class FileSystem {
 	// Final variables - parameters of memory.
 	private final int DISK_SIZE = 1024;
 	private final int BLOCK_SIZE = 32;
 	private final int NUMBER_OF_BLOCKS = DISK_SIZE / BLOCK_SIZE;
+
+	// Object needed for sync.
+	private MutexLock lock = new MutexLock();
 
 	// Data structures.
 	private char[] dataArea = new char[DISK_SIZE];
@@ -27,8 +32,6 @@ public class FileSystem {
 			fileAllocationTable[i] = -2;
 		}
 	}
-
-	static String response = "";
 
 	// Secondary method for checking value of file's last block index.
 	private int indexOfLastBlock(String name) {
@@ -68,11 +71,11 @@ public class FileSystem {
 		return available;
 	}
 
-	// Open file. If it finds file with exact name changes its open flag to "true";
-	public void openFile(String name) {
+	// Open file. If it finds file with exact name changes its open flag to "true".
+	public void openFile(String name, process_control_block processName) {
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name == name) {
-				// TODO: Dodaæ mutexlock :/
+				lock.lock(processName);
 				mainCatalog.get(i).open = true;
 				System.out.println("FileSystem: File " + name + " opened.");
 				break;
@@ -80,13 +83,45 @@ public class FileSystem {
 		}
 	}
 
-	// Open file. If it finds file with exact name changes its open flag to "true";
+	// Method needed for testing.
+	private void openFileWithOutProccess(String name) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name == name) {
+				if (!mainCatalog.get(i).open) {
+					mainCatalog.get(i).open = true;
+					// System.out.println("FileSystem: File " + name + " opened.");
+					break;
+				} else
+					break;
+			}
+		}
+	}
+
+	// Method needed for testing.
+	private void closeFileWithOutProccess(String name) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name == name) {
+				if (mainCatalog.get(i).open) {
+					mainCatalog.get(i).open = false;
+					// System.out.println("FileSystem: File " + name + " closed.");
+					break;
+				} else
+					break;
+			}
+		}
+	}
+
+	/*
+	 * Close file. If it finds file with exact name changes its open flag to
+	 * "false".
+	 */
 	public void closeFile(String name) {
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name == name) {
-				// TODO: Dodaæ mutexlock :/
+				lock.unlock();
 				mainCatalog.get(i).open = false;
 				System.out.println("FileSystem: File " + name + " closed.");
+				changeNumberOfReadChars(name, 0);
 				break;
 			}
 		}
@@ -231,6 +266,27 @@ public class FileSystem {
 		}
 	}
 
+	// Change value of read chars.
+	private void changeNumberOfReadChars(String name, int value) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				mainCatalog.get(i).readChars += value;
+				break;
+			}
+		}
+	}
+
+	private int getNumberOfReadChars(String name) {
+		int readChars = 0;
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				readChars = mainCatalog.get(i).readChars;
+				break;
+			}
+		}
+		return readChars;
+	}
+
 	// Creating a empty file.
 	public int createEmptyFile(String name) {
 		if (!checkNameAvailability(name)) {
@@ -257,15 +313,15 @@ public class FileSystem {
 		if (createEmptyFile(name) == 0)
 			return 0;
 		else {
-			//openFile(name);
+			openFileWithOutProccess(name);
 			appendToFile(name, content);
 			for (int i = 0; i < mainCatalog.size(); i++) {
 				if (mainCatalog.get(i).name.equals(name)) {
-					 mainCatalog.get(i).open = false;
+					mainCatalog.get(i).open = false;
 					break;
 				}
 			}
-			//closeFile(name);
+			closeFileWithOutProccess(name);
 			return 1;
 		}
 
@@ -340,13 +396,11 @@ public class FileSystem {
 	}
 
 	// Prints file's content.
-
-	public void readFile(String name) {
+	public void readFile(String name, int... charsToRead) {
 		if (!getFileFlagStatus(name)) {
-			System.out.println("FileSystem: Cannot append to file. File is closed.");
+			System.out.println("FileSystem: Cannot read file. File is closed.");
 			return;
 		}
-
 		int size = getFileSize(name);
 		if (size == 0) {
 			System.out.println("FileSystem: File " + name + " is empty.");
@@ -354,16 +408,30 @@ public class FileSystem {
 		}
 		int index = getFileFirstIndex(name);
 		System.out.println("FileSystem: File " + name + " contains: \n");
-		do {
-			for (int i = index * BLOCK_SIZE; i < index * BLOCK_SIZE + 32; i++) {
-				System.out.print(dataArea[i]);
-			}
-			int newIndex = fileAllocationTable[index];
-			index = newIndex;
-			if (index == -1)
-				break;
-		} while (true);
+		int leftToRead = 0;
+		if (charsToRead.length == 0)
+			leftToRead = getFileSize(name);
+		else {
+			leftToRead = charsToRead[0];
 
+		}
+		int i = 0;
+		int j = getNumberOfReadChars(name);
+		System.out.println();
+		while (leftToRead != 0) {
+			if (j == 32) {
+				j = 0;
+				int newIndex = fileAllocationTable[index];
+				index = newIndex;
+				if (index == -1)
+					break;
+			}
+			i = index * BLOCK_SIZE + j++;
+			System.out.print(dataArea[i]);
+			leftToRead--;
+		}
+		changeNumberOfReadChars(name, charsToRead[0]);
+		System.out.println();
 	}
 
 	// Prints value of every memory cell.
@@ -438,22 +506,26 @@ public class FileSystem {
 	}
 
 	public static void main(String[] args) {
-		
-		
-		/*FileSystem SystemTest = new FileSystem();
-		SystemTest.createFile("plik1", "MV A 5,MV C A,SB C 1,ML A C,JX C 14,EX;");
-		SystemTest.createFile("plik2", "MV A 2,MV B 3,AD A B,CF plik A,RF plik,EX;");
 
-		SystemTest.createFile("plik3", "XC proces1 prog1.txt,XC proces2 prog2.txt,XP potok,EX;");
-		SystemTest.createFile("plik4", "XS potok 5,EX;");
-		SystemTest.createFile("plik5", "XR potok 1 500,MV A B,AD B 5,ML A B,XE potok,EX;");
-		
-		SystemTest.deleteFile("plik2");
+		FileSystem SystemTest = new FileSystem();
+		SystemTest.createEmptyFile("plik1");
+		SystemTest.appendToFile("plik1",
+				"Wp³yn¹³emssss");
+		SystemTest.openFileWithOutProccess("plik1");
+		SystemTest.appendToFile("plik1",
+				"Wp³yn¹³em na suchego przestwór , Wóz nurza siê w zielonoœæ i jak ³ódka brodzi.");
+		//SystemTest.closeFileWithOutProccess("plik1");
+		SystemTest.appendToFile("plik1", "1");
+		// SystemTest.openFileWithOutProccess("plik1");
+		// SystemTest.readFile("plik1", 15);
+		// SystemTest.readFile("plik1", 15);
+		// SystemTest.closeFileWithOutProccess("plik1");
+		// SystemTest.readFile("plik1", 15);
 		SystemTest.showBitVector();
 		SystemTest.showData();
 		SystemTest.showMainCatalog();
 		SystemTest.showFAT();
-*/
+
 	}
 
 }
