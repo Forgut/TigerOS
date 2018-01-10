@@ -7,7 +7,8 @@ public class Pipe
 	String name;
 	MutexLock lock = new MutexLock();
 	LinkedList<Character> data = new LinkedList<Character>();
-	
+	//protected static int numberOfPipes = 0;
+	protected static LinkedList<Pipe> pipes = new LinkedList<Pipe>();
 	public Pipe(String name)
 	{
 		this.name = name;

@@ -11,8 +11,7 @@ public class FileSystem {
 	private final int BLOCK_SIZE = 32;
 	private final int NUMBER_OF_BLOCKS = DISK_SIZE / BLOCK_SIZE;
 
-	// Object needed for sync.
-	private MutexLock lock = new MutexLock();
+
 
 	// Data structures.
 	private char[] dataArea = new char[DISK_SIZE];
@@ -73,13 +72,24 @@ public class FileSystem {
 
 	// Open file. If it finds file with exact name changes its open flag to "true".
 	public void openFile(String name, process_control_block processName) {
+		System.out.println("i'm trying to open file1.");
 		for (int i = 0; i < mainCatalog.size(); i++) {
-			if (mainCatalog.get(i).name == name) {
-				lock.lock(processName);
+			if (mainCatalog.get(i).name.equals(name)) {
+				System.out.println("i'm trying to open file2.");
+				mainCatalog.get(i).lock.lock(processName);
 				mainCatalog.get(i).open = true;
 				System.out.println("FileSystem: File " + name + " opened.");
 				break;
 			}
+			
+			
+			/*if (mainCatalog.get(i).name == name) {
+				System.out.println("i'm trying to open file2.");
+				mainCatalog.get(i).lock.lock(processName);
+				mainCatalog.get(i).open = true;
+				System.out.println("FileSystem: File " + name + " opened.");
+				break;
+			}*/
 		}
 	}
 
@@ -117,8 +127,8 @@ public class FileSystem {
 	 */
 	public void closeFile(String name) {
 		for (int i = 0; i < mainCatalog.size(); i++) {
-			if (mainCatalog.get(i).name == name) {
-				lock.unlock();
+			if (mainCatalog.get(i).name.equals(name)) {
+				mainCatalog.get(i).lock.unlock();
 				mainCatalog.get(i).open = false;
 				System.out.println("FileSystem: File " + name + " closed.");
 				changeNumberOfReadChars(name, 0);
@@ -268,6 +278,7 @@ public class FileSystem {
 
 	// Change value of read chars.
 	private void changeNumberOfReadChars(String name, int value) {
+		System.out.println("trying to change number of read chars");
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name.equals(name)) {
 				mainCatalog.get(i).readChars += value;
@@ -430,8 +441,10 @@ public class FileSystem {
 			System.out.print(dataArea[i]);
 			leftToRead--;
 		}
+		if(charsToRead.length == 0)
+		changeNumberOfReadChars(name, 0);
+		else
 		changeNumberOfReadChars(name, charsToRead[0]);
-		System.out.println();
 	}
 
 	// Prints value of every memory cell.
@@ -508,14 +521,10 @@ public class FileSystem {
 	public static void main(String[] args) {
 
 		FileSystem SystemTest = new FileSystem();
-		SystemTest.createEmptyFile("plik1");
-		SystemTest.appendToFile("plik1",
-				"Wp³yn¹³emssss");
-		SystemTest.openFileWithOutProccess("plik1");
-		SystemTest.appendToFile("plik1",
-				"Wp³yn¹³em na suchego przestwór , Wóz nurza siê w zielonoœæ i jak ³ódka brodzi.");
+		SystemTest.createFile("plik1","Wp³yn¹³em na suchego przestwór , Wóz nurza siê w zielonoœæ i jak ³ódka brodzi.");
+		
 		//SystemTest.closeFileWithOutProccess("plik1");
-		SystemTest.appendToFile("plik1", "1");
+		//SystemTest.appendToFile("plik1", "1");
 		// SystemTest.openFileWithOutProccess("plik1");
 		// SystemTest.readFile("plik1", 15);
 		// SystemTest.readFile("plik1", 15);

@@ -18,8 +18,8 @@ public class Interpreter {
 	private ProcessManagment manager;
 	private FileSystem filesystem;
 	//private PCB PCB_b; 			//Zmienna do kopii PCB procesu
-	private int CMDCounter; 	//Licznik rozkazu do czytania z pamiï¿½ci
-	private int CCKCounter;		//licznik do sprawdzania czy program siÄ™ skoÅ„czyÅ‚
+	private int CMDCounter; 	//Licznik rozkazu do czytania z pami ci
+	private int CCKCounter;		//licznik do sprawdzania czy program siê skoñczy³
 	
 //-------------------------------------------------------------------------------------------------------------------
 	
@@ -35,24 +35,24 @@ public class Interpreter {
 	public int RUN(process_control_block Running) {
 		//PCB_b=Running.GetPCB();		 //Wczytanie PCB procesu
 		
-		communication = new Communication(Running); //nie uÅ¼ywna zmienna komunikacji
+		communication = new Communication(Running); //nie u¿ywna zmienna komunikacji
 		
 		
 		
 		CCKCounter = 0;
-		CMDCounter = Running.getLicznik_rozkazow(); //Pobieranie licznika rozkarï¿½w
+		CMDCounter = Running.getLicznik_rozkazow(); //Pobieranie licznika rozkar w
 		//System.out.println(CMDCounter + " stan licznika");
 		this.Reg_A = Running.getR1(); //Pobieranie stanu rejestru A
 		this.Reg_B = Running.getR2(); //Pobieranie stanu rejestru B
 		this.Reg_C = Running.getR3(); //Pobieranie stanu rejestru C
 		
-		processor.Set_A(Reg_A);			 //Ustawianie wartosci rejestru A do pamiï¿½ci
-		processor.Set_B(Reg_B);			 //Ustawianie wartosci rejestru B do pamiï¿½ci
-		processor.Set_C(Reg_C);			 //Ustawianie wartosci rejestru C do pamiï¿½ci
+		processor.Set_A(Reg_A);			 //Ustawianie wartosci rejestru A do pami ci
+		processor.Set_B(Reg_B);			 //Ustawianie wartosci rejestru B do pami ci
+		processor.Set_C(Reg_C);			 //Ustawianie wartosci rejestru C do pami ci
 		
 		String Instruction = "";
 		
-		Instruction = GetInstruction(Running);	 //Zmienna pomocnicza do ï¿½adowania instrukcji z pamiï¿½ci
+		Instruction = GetInstruction(Running);	 //Zmienna pomocnicza do  adowania instrukcji z pami ci
 		//System.out.println(Instruction.length());
 		Running.SetLicznik_rozkazow(Running.getLicznik_rozkazow()+Instruction.length());
 		Execute(Instruction,Running);
@@ -65,7 +65,7 @@ public class Interpreter {
 //-------------------------------------------------------------------------------------------------------------------
 	
 	void Execute(String Instruction,process_control_block Running) {
-		int x = 0;	//takie coï¿½ do sprawdzania czy byï¿½a spacja
+		int x = 0;	//takie co  do sprawdzania czy by a spacja
 		int i = 1; 	//licznik do podzialu rozkazu na segmenty
 		String CMD = "";
 		String P1 = "";
@@ -149,7 +149,7 @@ public class Interpreter {
 //-----------------------------------------------------------------------	ARYTMETYKA
 		
 		switch (CMD) {
-		case "AD": // Dodawanie wartoï¿½ci
+		case "AD": // Dodawanie warto ci
 			if (What) {
 				processor.SetValue(P1, GetValue(P1) + GetValue(P2));
 			} else {
@@ -157,7 +157,7 @@ public class Interpreter {
 			}
 			break;
 
-		case "SB": // Odejmowanie wartoï¿½ci
+		case "SB": // Odejmowanie warto ci
 			if (What) {
 				processor.SetValue(P1, GetValue(P1) - GetValue(P2));
 			} else {
@@ -165,7 +165,7 @@ public class Interpreter {
 			}
 			break;
 			
-		case "ML": // Mnoï¿½enie wartoï¿½ci
+		case "ML": // Mno enie warto ci
 			if (What) {
 				processor.SetValue(P1, GetValue(P1) * GetValue(P2));
 			} else {
@@ -173,7 +173,7 @@ public class Interpreter {
 			}
 			break;
 
-		case "MV": // Umieszczenie wartoï¿½ci
+		case "MV": // Umieszczenie warto ci
 			if (What) {
 				processor.SetValue(P1, GetValue(P2));
 			} else {
@@ -211,7 +211,7 @@ public class Interpreter {
 			break;
 			
 		case "WF": // Dopisanie do pliku
-			filesystem.openFile(P1);
+			//filesystem.openFile(P1,Running);
 			if (What) {
 				if(filesystem.appendToFile(P1,Integer.toString(GetValue(P2)))==1){
 					//filesystem.appendToFile(P1,Integer.toString(GetValue(P2)));
@@ -232,7 +232,7 @@ public class Interpreter {
 			break;
 			
 		case "DF": // Usuwanie pliku
-			filesystem.openFile(P1);
+			filesystem.openFile(P1,Running);
 			if((filesystem.deleteFile(P1))==1) {
 				//filesystem.deleteFile(P1);
 			}
@@ -240,16 +240,26 @@ public class Interpreter {
 				Running.Setstan(2);
 			}
 			break;
+		
+		case "RF": // Czytanie pliku
+			filesystem.openFile(P1,Running);
+			filesystem.readFile(P1);
+			break;
+			
+		case "RN": // Czytanie n znakow z pliku
+			filesystem.openFile(P1,Running);
+			filesystem.readFile(P1,GetValue(P2));
+			break;
 			
 //-----------------------------------------------------------------------	JUMPY I KONCZENIE
 			
 		case "JP": // Skok do rozkazu
-			CMDCounter = Integer.parseInt(P1);
+			CMDCounter = Running.getnumery_rozkazow(P1);
 			break;
 			
-		case "JX": // Skok do rozkazu, jeï¿½li rejestr != 0
+		case "JX": // Skok do rozkazu, je li rejestr != 0
 			if(GetValue(P1)!=0) {
-				CMDCounter = Integer.parseInt(P2) + Running.pageTable.getVirtualBase();
+				CMDCounter = Running.getnumery_rozkazow(P2);// + Running.pageTable.getVirtualBase();
 			}
 			break;
 
@@ -260,8 +270,9 @@ public class Interpreter {
 
 //-----------------------------------------------------------------------	PROCESY
 	
-		case "XR": // czytanie komunikatu;									
-			if(communication.readPipe(P1, Integer.parseInt(P2), Integer.parseInt(P3))==1){
+		case "XR": // czytanie komunikatu;		
+			int l=communication.readPipe(P1, Integer.parseInt(P2), Integer.parseInt(P3));
+			if(l==1){
 				//communication.readPipe(P1, Integer.parseInt(P2), Integer.parseInt(P3));
 				int od= Integer.parseInt(P3);
 				int ile = Integer.parseInt(P2);
@@ -272,12 +283,15 @@ public class Interpreter {
 				}while (pom.length()!=ile);
 				processor.SetValue("B", Integer.parseInt(pom));
 			}
+			else if(l==2){
+				CMDCounter=12;
+			}
 			else {
 				Running.Setstan(2);
 				}
 			break;
 	
-		case "XS": // -- Wysï¿½anie komunikatu;
+		case "XS": // -- Wys anie komunikatu;
 			if(communication.writePipe(P1, P2)==1) {
 				//communication.writePipe(P1, P2);
 			}
@@ -352,9 +366,9 @@ public class Interpreter {
 	private String GetInstruction(process_control_block Running) {
 		String Instruction = " ";
 		int Counter=0;
-		
+		Running.add_numer(CMDCounter);
 		do{ 
-			Instruction += Running.pageTable.readFromMemory(CMDCounter,Running.getID()); //pobieranie z pamiï¿½ci znaku o danym numerze, oraz naleï¿½ï¿½cego do danego procesu
+			Instruction += Running.pageTable.readFromMemory(CMDCounter,Running.getID()); //pobieranie z pami ci znaku o danym numerze, oraz nale  cego do danego procesu
 			
 			CMDCounter++;
 			Counter++;

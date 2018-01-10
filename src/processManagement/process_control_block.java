@@ -1,6 +1,7 @@
 package processManagement;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.ArrayList;
 
 import memorymanagement.Memory;
 import memorymanagement.PageTable;
@@ -26,7 +27,9 @@ public PageTable pageTable;
 public int virtualBase;
 private int rozmiar_tablicy_stronic, start_kodu_procesu /*w pliku wymiany*/;
 /*Koniec*/
-
+/*Kaper*/
+private ArrayList<Integer> numery_rozkazow;
+/*Koniec*/
 private String file_name; //nazwa pliku w ktorym sie znajduje kod procesu
 /*ADAM ???*/
 //private klasa_adama rejestry_procesora;
@@ -50,6 +53,14 @@ public int INCPriorytet_Dynamiczny() {
 	else {
 		return 1; //nie udalo sie zwiekszyc priorytetu - zwraca 1
 	}
+}
+public int DECPriorytet_Dynamiczny() {
+if (priorytet_dynamiczny > 1 && priorytet_dynamiczny <8 ) {
+	priorytet_dynamiczny--;
+	return 0;
+} else {
+	return 1;
+}
 }
 public int INCPriorytet_Dynamiczny(int a) {
 	if (priorytet_dynamiczny>0 && priorytet_dynamiczny<7 && !czasu_rzeczywistego) {
@@ -121,16 +132,19 @@ public process_control_block(int a, Memory memory) {//osobny konstruktor dla pro
 	nowe_id++;
 	this.pageTable=new PageTable("bezczynnosc",16,memory); 
 	licznik_rozkazow=licznik_wykonanych_rozkazow=rozmiar_tablicy_stronic=start_kodu_procesu=R1=R2=R3=0;
+	numery_rozkazow=new ArrayList<Integer>();
 	SetFile_name("bezczynnosc");
 	Setstan(0);	
 }
 public process_control_block() {	
 	ID=nowe_id; 
+	numery_rozkazow=new ArrayList<Integer>();
 	licznik_rozkazow=priorytet_bazowy=priorytet_dynamiczny=licznik_wykonanych_rozkazow=virtualBase=0;
 }
 public process_control_block(String nname) {
 	setName(nname);
 	ID=nowe_id; 
+	numery_rozkazow=new ArrayList<Integer>();
 	licznik_rozkazow=priorytet_bazowy=priorytet_dynamiczny=licznik_wykonanych_rozkazow=0;
 }
 public process_control_block(String nname,String file_nam, Memory memory) {
@@ -143,12 +157,19 @@ public process_control_block(String nname,String file_nam, Memory memory) {
 	setPriorytet_Bazowy(Losuj_priorytet(czasu_rzeczywistego));
 	this.pageTable=new PageTable(file_nam,60, memory);
 	licznik_wykonanych_rozkazow=0;
+	numery_rozkazow=new ArrayList<Integer>();
 	start_kodu_procesu=0;
 	SetFile_name(file_nam);
 	SetR1(0);
 	SetR2(0);
 	SetR3(0);
 	Setstan(0);
+}
+public void add_numer(int addr) {
+	numery_rozkazow.add(addr);
+}
+public int getnumery_rozkazow(int iter) {
+	return numery_rozkazow.get(0);
 }
 public int getID() {
 	return ID;

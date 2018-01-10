@@ -88,7 +88,7 @@ public class Shell
 		}
 		case("load"):
 		{
-			processManagment.create_process("1p", "Prog", memory);
+			processManagment.create_process("1p", "p2", memory);
 			break;
 		}
 		case("step"): //make one step on proc
@@ -131,15 +131,15 @@ public class Shell
 			filesystem.createEmptyFile("PUSTY");
 			break;
 		}
-		case("wrtf"):
+		/*case("wrtf"): Shell nie moze pisac do pliku
 		{
-			filesystem.openFile("PUSTY");
+			filesystem.openFile("PUSTY"); 
 			filesystem.readFile("PUSTY");
 			filesystem.appendToFile("PUSTY", "EAEAEAEAEAEEAEAEAEAE");
 			filesystem.readFile("PUSTY");
 			filesystem.closeFile("PUSTY");
 			break;
-		}
+		}*/
 		case("regl"):
 		{
 			interpreter.Show_Regs();
@@ -175,8 +175,8 @@ public class Shell
 		try {
 			new Shell();
 		} catch(Exception io) {
-			System.out.println(io.getMessage());
-			System.out.println("im overloaded!");
+			
+			System.out.println("im overloaded!" + io);
 		}
 		
 		

@@ -50,7 +50,7 @@ public class MutexLock {
 			isLocked = false;
 			currentProcess = null;
 		}
-		//Jest kolejka nie jest pusta, wez kolejny proces z kolejki i zmien jego stan na gotowy
+		//Jesli kolejka nie jest pusta, wez kolejny proces z kolejki i zmien jego stan na gotowy
 		else {
 			System.out.print("Changing currentProcess from : " +  currentProcess.getID());
 			currentProcess = queue.poll();
@@ -59,6 +59,11 @@ public class MutexLock {
 		}
 	}
 	
+	public void addToQueue(process_control_block pcb)
+	{
+		queue.add(pcb);
+		pcb.Setstan(1);
+	}
 	//Todo later
 	/*public void unlock(boolean isEmpty) {
 		//Jesli kolejka jest pusta, otworz zamek

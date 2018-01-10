@@ -8,6 +8,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
+
 import Shell.Shell;
 import memorymanagement.Memory;
 import processManagement.ProcessManagment;
@@ -61,14 +62,11 @@ public class PageTable {
 	}
 	
 	public int getVirtualBase() {
-		System.out.println("virtual base get:::" + virtualBase);
 		return virtualBase;
 	}
 	
 	private void setVirtualBase() {
-		virtualBase = memory.virtualMemory.size();; 
-		System.out.println("virtualBase w konstruktorze PageTable: " + virtualBase);
-		
+		virtualBase = memory.virtualMemory.size();; 	
 	}
 	
 	public void writeToVirtualMemory(char[] program, int processSize) {
@@ -108,16 +106,10 @@ public class PageTable {
 				e.printStackTrace();
 			}
 		
-		String everything = sb.toString();
-		
-		String result = everything.replaceAll("[\\t\\n\\r]+"," ");
-		
-		program = result.toCharArray();
-		
+		String everything = sb.toString();		
+		String result = everything.replaceAll("[\\t\\n\\r]+"," ");		
+		program = result.toCharArray();		
 		setFirstFreeLogicalAdress(program);
-	//	System.out.println("first free: " + firstFreeLogicalAdress);
-		
-		
 		memory.writeToVirualMemory(virtualBase, program, processSize);
 		
 	}
@@ -131,7 +123,6 @@ public class PageTable {
 	public  char readFromMemory(int logicalAdress, int ID) {
 		if(isFrameInRAM(getVirtualFrame(logicalAdress))) {
 			// TODO: set bit innego procesu		
-			//int ID = Shell.runningProcess.getID();
 			int frameRAM = frameNumber[getVirtualFrame(logicalAdress)];
 			for(FIFOFrame e : memory.FIFO)
 				if(e.ID == ID && e.number == frameRAM)
@@ -139,7 +130,7 @@ public class PageTable {
 			return getCharFromRAM(logicalAdress);
 		}
 		else {
-			System.out.println("virt frame + virtbase: " + (Integer)(getVirtualFrame(logicalAdress)+virtualBase));
+			System.out.println("PAGETABLE: readFromMemory: logicalAdress = " + logicalAdress + "; virtualBase = " + virtualBase + "; ID = " + ID);
 			writeFrameToRAM(getVirtualFrame(logicalAdress)+virtualBase, ID);
 			return getCharFromRAM(logicalAdress);
 		}
@@ -159,43 +150,45 @@ public class PageTable {
 	
 	private char getCharFromRAM(int logicalAdress) {
 		char character = 0;
-		System.out.println("getVirtualFrame(logicalAdress)+virtualBase = " + (Integer)(getVirtualFrame(logicalAdress)+virtualBase));
-		for(int e : frameNumber)
-			System.out.println(e + " ");
-		System.out.println();
-		// inkrementuje sie cos w framenumber
-		int frameInRAM = frameNumber[getVirtualFrame(logicalAdress)+virtualBase];
-	//	System.out.println("	print");
-	//	print();
+		int frameInRAM = frameNumber[getVirtualFrame(logicalAdress)];
 		int offset = getVirtualOffset(logicalAdress);
-		System.out.println("frameInRAM " + frameInRAM);
-		System.out.println("offset " + offset);
 		character = memory.getCharFromRAM(frameInRAM, offset);
-		System.out.println("	getCharFromRAM = " + character);	
 		return character;
 	}
 	
 	private void writeFrameToRAM(int frameVirtual, int ID) {
+	//	System.out.println("WRITEFRAMETORAM frameVirtual = " + frameVirtual);
+		int frameLogical = frameVirtual - virtualBase;
 		if(memory.isFreeFrame()) {
 			int frameRAM = memory.firstFreeFrame();
 			memory.writeFrameToRAM(frameVirtual, frameRAM);
-			frameNumber[frameVirtual] = frameRAM;
-			inRAM[frameVirtual] = true;
-			addFrameToFIFO(frameRAM, ID);
+			frameNumber[frameLogical] = frameRAM;
+			inRAM[frameLogical] = true;
+			addFrameToFIFO(frameRAM, ID); //????
 		}
 		else {
+			System.out.println("PAGETABLE: !isFreeFrame() - DRUGA SZANSA");
 			int victimFrameFIFOIndex = getVictimFrame();
+	//		System.out.println("victimFrameFIFOIndex = " + victimFrameFIFOIndex);
 			int frameRAM = memory.FIFO.get(victimFrameFIFOIndex).number;
-			int IDVictim = memory.FIFO.get(victimFrameFIFOIndex).ID;				
-			if(isPageInCurrentProcess(IDVictim, ID)) 
+			int IDVictim = memory.FIFO.get(victimFrameFIFOIndex).ID;	
+			int virtualBase = ProcessManagment.getPCB(IDVictim).pageTable.virtualBase;
+			System.out.print("printMEMORY: ");
+			memory.print();
+			System.out.println("VICTIM: frameRAM = " + frameRAM + "; IDVictim = " + IDVictim);
+			System.out.println("print page table victim:");
+			ProcessManagment.getPCB(IDVictim).pageTable.print();
+			if(isPageInCurrentProcess(IDVictim, ID))
 				removeEverythingAboutPageOfCurrentProcessFromRAM(frameRAM);
 			else
 				// TODO: usun z pagetable innego procesu - nieprzetestowane
-				removeEverythingAboutPageOfOtherProcessFromRAM(frameRAM, ID);
+				removeEverythingAboutPageOfOtherProcessFromRAM(frameRAM, IDVictim);
 			memory.FIFO.remove(victimFrameFIFOIndex);
-			
+			System.out.println("VICTIM REMOVED");
+			memory.print();
 			memory.writeFrameToRAM(frameVirtual, frameRAM);
 			addEverythingAboutPageOfCurrentProcessToRAM(frameVirtual, frameRAM, ID);
+			System.out.println("END DRUGA SZANSA");
 		}
 	}
 	
@@ -220,7 +213,10 @@ public class PageTable {
 	// TODO: przetestowac
 	private void removeEverythingAboutPageOfOtherProcessFromRAM(int frameRAM, int ID) {
 		// from RAM to virtual
+		System.out.println("----removeEverythingAboutPageOfOtherProcessFromRAM----");
+		ProcessManagment.getPCB(ID).pageTable.print();
 		int frameVirtualToRewrite = ProcessManagment.getPCB(ID).pageTable.frameNumber[frameRAM];
+		System.out.println("frameVirtualToRewrite = " + frameVirtualToRewrite);
 		if(frameVirtualToRewrite != -1)
 			memory.rewriteFromRAMToVirtualMemoryOfOtherProcess(frameVirtualToRewrite, getVirtualFrameOfOtherProcess(), ProcessManagment.getPCB(ID).pageTable.virtualBase);
 		
@@ -232,13 +228,16 @@ public class PageTable {
 			else
 				indexOfFrameToClear++;
 		}
+		ProcessManagment.getPCB(ID).pageTable.print();
 		ProcessManagment.getPCB(ID).pageTable.frameNumber[indexOfFrameToClear] = -1;
 		ProcessManagment.getPCB(ID).pageTable.inRAM[indexOfFrameToClear] = false;
 	}
 	
 	private void addEverythingAboutPageOfCurrentProcessToRAM(int frameVirtual, int frameRAM, int ID) {
-		frameNumber[frameVirtual] = frameRAM;
-		inRAM[frameVirtual] = true;
+	//	System.out.println("addEverythingAboutPageOfCurrentProcessToRAM");
+	//	System.out.println("ID = " + ID + "; frameVirtual = " + frameVirtual + "; frameRAM = "+frameRAM);
+		frameNumber[frameVirtual-ProcessManagment.getPCB(ID).pageTable.getVirtualBase()] = frameRAM;
+		inRAM[frameVirtual-ProcessManagment.getPCB(ID).pageTable.getVirtualBase()] = true;
 		addFrameToFIFO(frameRAM, ID);
 	}
 	
@@ -281,7 +280,6 @@ public class PageTable {
 	public void writeToMemory(int logicalAdress, char character, int ID) {
 		if(isFrameInRAM(getVirtualFrame(logicalAdress))) {
 			// TODO: set bit innego procesu?			
-		//	int ID = Shell.runningProcess.getID();
 			int frameRAM = frameNumber[getVirtualFrame(logicalAdress)];
 			for(FIFOFrame e : memory.FIFO)
 				if(e.ID == ID && e.number == frameRAM)
@@ -289,7 +287,7 @@ public class PageTable {
 			writeCharToRAM(logicalAdress, character);
 		}
 		else {
-			writeFrameToRAM(getVirtualFrame(logicalAdress), ID);
+			writeFrameToRAM(getVirtualFrame(logicalAdress)+virtualBase, ID);
 			writeCharToRAM(logicalAdress, character);
 		}
 		firstFreeLogicalAdress++;

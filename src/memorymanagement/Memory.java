@@ -109,9 +109,11 @@ public class Memory {
 	}
 	
 	protected void writeFrameToRAM(int frameVirtual, int frameRAM) {
+	//	System.out.println("MEMORY: frameVirtual = " + frameVirtual);
+	//	System.out.println("MEMORY: frameRAM = " + frameRAM);
 		for(int i=0;i<FRAME_SIZE;i++) {
 			RAM[frameRAM*FRAME_SIZE+i] = virtualMemory.get(frameVirtual).get(i);	
-	//		System.out.println("zapisywane: " +  virtualMemory.get(frameVirtual).get(i) + " do " + (Integer)(frameRAM*FRAME_SIZE+i));
+	//		System.out.println("MEMORY - zapisywane do RAM: " +  virtualMemory.get(frameVirtual).get(i) + " do " + (Integer)(frameRAM*FRAME_SIZE+i));
 		}
 		freeFrames[frameRAM] = false;
 	}
@@ -152,4 +154,5 @@ public class Memory {
 		int index = FRAME_SIZE*frame+offset;
 		RAM[index] = character;
 	}
+	
 }
