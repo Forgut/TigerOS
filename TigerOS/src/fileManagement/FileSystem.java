@@ -100,7 +100,7 @@ public class FileSystem {
 			if (mainCatalog.get(i).name.equals(name)) {
 				if (mainCatalog.get(i).open) {
 					mainCatalog.get(i).open = false;
-					// System.out.println("FileSystem: File " + name + " closed.");
+					mainCatalog.get(i).readChars = 0;
 					break;
 				} else
 					break;
@@ -115,7 +115,7 @@ public class FileSystem {
 				mainCatalog.get(i).lock.unlock();
 				mainCatalog.get(i).open = false;
 				System.out.println("FileSystem: File " + name + " closed.");
-				changeNumberOfReadChars(name, 0);
+				increaseNumberOfReadChars(name, 0);
 				break;
 			}
 		}
@@ -177,7 +177,7 @@ public class FileSystem {
 	// Check if new data will fit in memory.
 	private boolean isEnoughMemory(String name, int neededSpace) {
 		boolean isEnough = false;
-		int freeMemory = BLOCK_SIZE * numberOfFreeBlocks();
+		int freeMemory = BLOCK_SIZE * (numberOfFreeBlocks() + 1);
 		if (isFileHaveSpace(name)) {
 			int size = getFileSize(name);
 			int howMany = size % 32;
@@ -263,11 +263,21 @@ public class FileSystem {
 		}
 	}
 
-	// Change value of read chars.
-	private void changeNumberOfReadChars(String name, int value) {
+	// Increase value of read chars.
+	private void increaseNumberOfReadChars(String name, int value) {
 		for (int i = 0; i < mainCatalog.size(); i++) {
 			if (mainCatalog.get(i).name.equals(name)) {
 				mainCatalog.get(i).readChars += value;
+				break;
+			}
+		}
+	}
+
+	// Set value of read chars.
+	private void setNumberOfReadChars(String name, int value) {
+		for (int i = 0; i < mainCatalog.size(); i++) {
+			if (mainCatalog.get(i).name.equals(name)) {
+				mainCatalog.get(i).readChars = value;
 				break;
 			}
 		}
@@ -421,18 +431,32 @@ public class FileSystem {
 			return;
 		}
 		int index = getFileFirstIndex(name);
-		System.out.print("FileSystem: File " + name + " contains:");
 		int leftToRead = 0;
 		if (charsToRead.length == 0)
-			leftToRead = getFileSize(name);
+			leftToRead = size;
 		else {
-			leftToRead = charsToRead[0];
+			if (charsToRead[0] < 0) {
+				System.out.println("FileSystem: You can't read negative number of characters.");
+				return;
+			}
 
+			if (charsToRead[0] > size)
+				leftToRead = size;
+			else
+				leftToRead = charsToRead[0];
 		}
 		int i = 0;
 		int j = getNumberOfReadChars(name);
+		int k = 0;
+		if (j == size) {
+			System.out.println(
+					"FileSystem: File is readed. To read it's content \nyou need to close it, then open once again.");
+			return;
+		}
+		System.out.print("FileSystem: File " + name + " contains:");
 		System.out.println();
 		while (leftToRead != 0) {
+
 			if (j == 32) {
 				j = 0;
 				int newIndex = fileAllocationTable[index];
@@ -442,13 +466,19 @@ public class FileSystem {
 			}
 			i = index * BLOCK_SIZE + j++;
 			System.out.print(dataArea[i]);
+			k++;
 			leftToRead--;
+			if (getNumberOfReadChars(name) + k == size) {
+				setNumberOfReadChars(name, size);
+				System.out.println();
+				return;
+			}
 		}
 		System.out.println();
 		if (charsToRead.length == 0)
-			changeNumberOfReadChars(name, 0);
+			increaseNumberOfReadChars(name, size);
 		else
-			changeNumberOfReadChars(name, charsToRead[0]);
+			increaseNumberOfReadChars(name, charsToRead[0]);
 	}
 
 	// Prints value of every memory cell.
@@ -510,12 +540,13 @@ public class FileSystem {
 		if (mainCatalog.isEmpty()) {
 			System.out.println("Main Catalog is Empty");
 		} else {
-			System.out.println("NR\tNAME\tFIRST BLOCK\tSIZE");
+			System.out.println("NR\tNAME\tFIRST BLOCK\tSIZE\tREAD CHARS");
 			for (int i = 0; i < mainCatalog.size(); i++) {
 				System.out.print((i + 1) + "\t");
 				System.out.print(mainCatalog.get(i).name + "\t");
 				System.out.print(mainCatalog.get(i).indexOfFirstBlock + 1 + "\t\t");
-				System.out.print(mainCatalog.get(i).size);
+				System.out.print(mainCatalog.get(i).size + "\t");
+				System.out.print(mainCatalog.get(i).readChars);
 				System.out.print("\n");
 			}
 		}
@@ -528,15 +559,16 @@ public class FileSystem {
 			System.out.println("Main Catalog is Empty");
 		} else {
 			System.out.println("File " + name + " informations:");
-			System.out.println("NAME\tFIRST BLOCK\tSIZE");
+			System.out.println("NAME\tFIRST BLOCK\tSIZE\tREAD CHARS");
 			int fileNumber = fileNumberSetter(name);
 			System.out.print(mainCatalog.get(fileNumber).name + "\t");
 			System.out.print(mainCatalog.get(fileNumber).indexOfFirstBlock + "\t\t");
 
 			if (mainCatalog.get(fileNumber).size > 32)
-				System.out.print(mainCatalog.get(fileNumber).size / 32);
+				System.out.print(mainCatalog.get(fileNumber).size / 32 + "\t");
 			else
-				System.out.print("1");
+				System.out.print("1" + "\t");
+			System.out.print(mainCatalog.get(fileNumber).readChars + "\t\t");
 			System.out.println("\n");
 		}
 	}
@@ -559,7 +591,5 @@ public class FileSystem {
 		} else {
 			System.out.println("FileSystem: Block is empty.");
 		}
-
 	}
-
 }
