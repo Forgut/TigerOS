@@ -17,9 +17,12 @@ public class ProcessManagment {
 	} // na ktorej juz jest proces bezczynnosci
 
 	public int create_process(String nname,int size, String file_nam, Memory memory) {
-
-		istniejace_procesy.add_to_list(new process_control_block(nname,size, file_nam, memory));
-
+		try {
+			istniejace_procesy.add_to_list(new process_control_block(nname,size, file_nam, memory));
+		} catch(Exception e) {
+			System.out.println("CREATE PROCESS - nie utworzono procesu");
+			return 0;
+		}
 		return 1;
 	}
 

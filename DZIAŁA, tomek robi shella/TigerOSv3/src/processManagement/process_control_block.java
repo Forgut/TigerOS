@@ -130,7 +130,11 @@ public process_control_block(int a, Memory memory) {//osobny konstruktor dla pro
 	setPriorytet_Bazowy(0);
 	ID=nowe_id;
 	nowe_id++;
-	this.pageTable=new PageTable("bezczynnosc",16,memory); 
+	try {
+		this.pageTable=new PageTable("bezczynnosc",16,memory); 
+	} catch(Exception e) {
+		
+	}
 	licznik_rozkazow=licznik_wykonanych_rozkazow=rozmiar_tablicy_stronic=start_kodu_procesu=R1=R2=R3=0;
 	numery_rozkazow=new ArrayList<Integer>();
 	SetFile_name("bezczynnosc");
@@ -147,14 +151,18 @@ public process_control_block(String nname) {
 	numery_rozkazow=new ArrayList<Integer>();
 	licznik_rozkazow=priorytet_bazowy=priorytet_dynamiczny=licznik_wykonanych_rozkazow=0;
 }
-public process_control_block(String nname,int size, String file_nam, Memory memory) {
+public process_control_block(String nname,int size, String file_nam, Memory memory) throws Exception {
 	Name=nname;
 	this.czasu_rzeczywistego=false;
 	ID=nowe_id;
 	nowe_id++;
 	licznik_rozkazow=0;
 	setPriorytet_Bazowy(Losuj_priorytet(czasu_rzeczywistego));
-	this.pageTable=new PageTable(file_nam,size, memory);
+	try {
+		this.pageTable=new PageTable(file_nam,size, memory);
+	} catch(Exception e) {
+		throw new Exception();
+	}
 	licznik_wykonanych_rozkazow=0;
 	numery_rozkazow=new ArrayList<Integer>();
 	start_kodu_procesu=0;
