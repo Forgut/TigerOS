@@ -47,7 +47,7 @@ public class ProcessorManager {
 		changerunningProcess();
 	}
 	
-	public void ReadyThread(process_control_block Temp)//decyduje o przysz³osci procesu w momencie zwiekszenia sie jego kwantu czasu 
+	public void ReadyThread(process_control_block Temp)//decyduje o przyszï¿½osci procesu w momencie zwiekszenia sie jego kwantu czasu 
 	{
 		lista.get(Temp.getPriorytet_dynamiczny()).remove(Temp);
 		if(lista.get(Temp.getPriorytet_dynamiczny()).size()==0)
@@ -62,8 +62,7 @@ public class ProcessorManager {
 		Temp.INCPriorytet_Dynamiczny();
 		
 		AddProcess(Temp);
-		
-		//System.out.println(" 63 Podnioslo Priorytet"+Temp.getID());
+
 	}
     	
 	public void Starving()//zwiekszanie priorytetow w po uplynieciu kwantu czasu
@@ -74,19 +73,15 @@ public class ProcessorManager {
 			
 			if(lista.get(i).size()>0)
 			{
-				//System.out.println(" Podnioslo starving1 ");
-				
+					
 				for(int b=lista.get(i).size()-1;b>=0;b--)
 				{
-					
-					//System.out.println(" Podnioslo starving2 "+lista.get(i).get(b).getLicznik_wykonanych_rozkazow());
-						
+											
 						if(lista.get(i).get(b).getLicznik_wykonanych_rozkazow()>0)//decydowanie co ile rozkazow wykonanych ma zmienic sie priorytet
 						{
-							//System.out.println(" Podnioslo starving procesowi  "+lista.get(i).get(b).getID());
 							lista.get(i).get(b).SetLicznik_wykonanych_rozkazow(0);//resetowanie licznika
 						
-							process_control_block temp;//zmienna pomocnicza do przelozenia procesu w liscie na nowe nale¿ne jej miejsce
+							process_control_block temp;//zmienna pomocnicza do przelozenia procesu w liscie na nowe naleï¿½ne jej miejsce
 							temp=lista.get(i).get(b);
 							
 							ReadyThread(temp);
@@ -108,12 +103,10 @@ public class ProcessorManager {
 		
 		int temp=Running.getPriorytet_dynamiczny();
 		
-		//System.out.println("CheckBiggest "+Running.getPriorytet_dynamiczny());
-		
 		
 		if(temp>7)
 		{
-			//System.out.println("else1234");
+			
 			for(int i=15;i>7;i--)//sprawdzanie jesli Running jest czasu rzeczywistego
 			{
 				if(arr[i]==true)
@@ -137,12 +130,10 @@ public class ProcessorManager {
 		}
 		else
 		{
-		//	System.out.println("CheckBiggest 2 "+Running.getPriorytet_dynamiczny());
-			
+					
 			for(int i=15;i>temp;i--)//sprawdzanie czy sa wieksze ktore powinny wywlaszczyc
 			{
-				//System.out.println("CheckBiggest 2: "+i+Running.getPriorytet_dynamiczny());
-
+			
 				if(lista.get(i).size()>0)
 				{
 					
@@ -161,23 +152,17 @@ public class ProcessorManager {
 			}
 			for(int i=6;i>0;i--)//znalezienie innego zamiennika na przyszlosc
 			{
-				//System.out.println("CheckBiggest3 ");
-
+				
 				if(lista.get(i).size()>0)
 				{
-				//	System.out.println("146stan running ostat "+Running.getStan());
+				
 					NextRunningProcess=lista.get(i).get(0);
-					
-					//System.out.println("uszykowany nex "+NextRunningProcess.getID());
-					
-					
 					
 					return false;
 				}
 				
 			}
-			//System.out.println("CheckBiggest4 "+Running.getPriorytet_dynamiczny());
-			
+						
 			NextRunningProcess=idleProcess;
 			return false;
 		}
@@ -223,9 +208,9 @@ public class ProcessorManager {
 				
 				for(int b=0;b<lista.get(i).size();b++)
 				{
-						//System.out.println("zwiekszanie ");
+						
 						lista.get(i).get(b).INCLicznik_wykonanych_rozkazow();
-						//System.out.println("Podniesiono licznik dla "+ lista.get(i).get(b).getID());
+						
 																	
 				}
 					
@@ -238,8 +223,7 @@ public class ProcessorManager {
 	{
 		if(Temp!=Running)
 		{
-		   // System.out.println("Add 240 Dodano proces o priorytecie "+Temp.getPriorytet_dynamiczny());
-			lista.get(Temp.getPriorytet_dynamiczny()).add(Temp);
+		   	lista.get(Temp.getPriorytet_dynamiczny()).add(Temp);
 			
 			if(lista.get(Temp.getPriorytet_dynamiczny()).size()>0)
 			{
@@ -249,9 +233,9 @@ public class ProcessorManager {
 	
 			if(CheckBiggest()==true)
 			{
-				//System.out.println("jest wiekszy");
+				
 				changerunningProcess();
-				//System.out.println(Running.getID()+"- aktualnie uruchomiony ");
+				
 			}
 		}
 		
@@ -349,7 +333,7 @@ public class ProcessorManager {
 		NextRunningProcess=idleProcess;
 	}
 
-	public void Scheduler()//tu sie wszystko dzieje, z tego miejsca wszystko jest wywo³ywane 
+	public void Scheduler()//tu sie wszystko dzieje, z tego miejsca wszystko jest wywoï¿½ywane 
 	{
 		ProcessManagement1.uporzadkuj_procesy();
 		
@@ -363,20 +347,20 @@ public class ProcessorManager {
 			
 			interpreter.RUN(Running);//odpalanie interpretera			
 		}
-		else 
+		else
 		{
-			//System.out.println("357 sheduler id running  "+Running.getID());
+			
 			
 			CheckBiggest();
 			
 			if(Running.getPriorytet_dynamiczny()<NextRunningProcess.getPriorytet_dynamiczny()) {
-				//System.out.println("357 sheduler id nextrunning  "+NextRunningProcess.getID());
+				
 				changerunningProcess();
 			}
-			//System.out.println("369 sheduler id nextrunning  "+NextRunningProcess.getID());
+			
 		
 			interpreter.RUN(Running);//odpalanie interpretera
-		//showRunning();
+		}
 		// showQueue();
 		if(Running.getStan()==2)
 		{
@@ -384,7 +368,7 @@ public class ProcessorManager {
 			Running=idleProcess;
 			NextRunningProcess=idleProcess;
 		}
-		}
+		
 		
 		IncreaseCounter();		
 		if(Running.getPriorytet_dynamiczny()>Running.getPriorytet_bazowy()) {
@@ -396,9 +380,13 @@ public class ProcessorManager {
 		
 	}
 
-	public void showQueue()
+	public void showQueue() //metoda pomocnicza do testowania projektu 
 	{
-		for(int i=15;i>=0;i--)//sprawdzanie tylko dla priorytetow 1-7
+		System.out.println("\n");
+		System.out.println("Running:");
+		System.out.println("ID procesu: "+Running.getID());
+		System.out.println("Priorytet procesu: "+Running.getPriorytet_dynamiczny());
+		for(int i=15;i>=0;i--)
 		{
 			
 			if(lista.get(i).size()>0)
@@ -406,7 +394,11 @@ public class ProcessorManager {
 				for(int b=lista.get(i).size()-1;b>=0;b--)
 				{
 					
-						lista.get(i).get(b).print();
+						
+						System.out.println("\n");
+						System.out.println("ID procesu: "+lista.get(i).get(b).getID());
+						System.out.println("Priorytet procesu: "+lista.get(i).get(b).getPriorytet_dynamiczny());
+						
 
 																	
 				}
