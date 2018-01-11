@@ -8,7 +8,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.xml.ws.handler.LogicalHandler;
 
 import Shell.Shell;
 import memorymanagement.Memory;
@@ -24,19 +23,21 @@ public class PageTable {
 	private Memory memory;
 	private int virtualBase;
 	
-	public PageTable(String fileName, int processSize, Memory memory) {
+	public PageTable(String fileName, int processSize, Memory memory) throws Exception {
 		this.memory = memory;
 		if(processSize%memory.FRAME_SIZE==0)
 			pagesRequired=processSize/memory.FRAME_SIZE;
 		else
 			pagesRequired=processSize/memory.FRAME_SIZE+1;
-//		System.out.println("Pages Required: " + pagesRequired);
-		initInRAM();
-		
-		initFrameNumber();
-		
+		initInRAM();		
+		initFrameNumber();		
 		setVirtualBase();
-		writeFromFileToVirtualMemory(fileName, processSize);
+		try {
+			writeFromFileToVirtualMemory(fileName, processSize);
+		} catch (Exception e) {
+			System.out.println("PAGE TABLE: nie mozna dodac do pamieci");
+			throw new Exception();
+		}
 	}
 	
 	public void print() {
@@ -74,24 +75,28 @@ public class PageTable {
 		memory.writeToVirualMemory(virtualBase , program, processSize); 
 	}	
 	
-	public void writeFromFileToVirtualMemory(String fileName, int processSize) {
+	public void writeFromFileToVirtualMemory(String fileName, int processSize)  throws Exception {
 		this.processSize = processSize;
 		char[] program;
 		StringBuilder sb = new StringBuilder();
 		int logicalAdress = 0;
 		File file = new File("src/" + fileName);
+		try {
 			if (!file.exists()) {
 				System.out.println(fileName + " does not exist.");
-				return;
+				throw new Exception();
+		//		return;
 			}
 			if (!(file.isFile() && file.canRead())) {
 				System.out.println(file.getName() + " cannot be read from.");
-				return;
+				throw new Exception();
+		//		return;
 			}
 			try {
 				FileInputStream fis = new FileInputStream(file);
 				if(processSize<fis.available()) {
 					System.out.println("process size is too small");
+					throw new Exception();
 			//		return;
 				}
 				char current;
@@ -106,7 +111,9 @@ public class PageTable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		
+		} catch (Exception e) {
+			
+		}
 		String everything = sb.toString();		
 		String result = everything.replaceAll("[\\t\\n\\r]+"," ");		
 		program = result.toCharArray();		
